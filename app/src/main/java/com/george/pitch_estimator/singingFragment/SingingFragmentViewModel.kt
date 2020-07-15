@@ -10,6 +10,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import androidx.lifecycle.viewModelScope
 
 class SingingFragmentViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -17,12 +18,7 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
 
     var _singingRunning = false
 
-    private val viewModelJob = Job()
-    private val viewModelScope = CoroutineScope(viewModelJob + Dispatchers.IO)
-
-    init {
-
-    }
+    init {}
 
     fun setSingRecorderModule(singRecorder: SingRecorder) {
         singRecorderObject = singRecorder
@@ -45,11 +41,6 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
             // reset stream
             singRecorderObject.reInitializePcmStream()
         }
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        viewModelJob.cancel()
     }
 
 }
