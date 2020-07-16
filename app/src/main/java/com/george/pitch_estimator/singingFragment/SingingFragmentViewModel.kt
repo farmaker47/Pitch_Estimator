@@ -11,17 +11,20 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import androidx.lifecycle.viewModelScope
+import com.george.pitch_estimator.PitchModelExecutor
 
 class SingingFragmentViewModel(application: Application) : AndroidViewModel(application) {
 
     lateinit var singRecorderObject: SingRecorder
+    lateinit var pitchModelExecutorObject: PitchModelExecutor
 
     var _singingRunning = false
 
     init {}
 
-    fun setSingRecorderModule(singRecorder: SingRecorder) {
+    fun setSingRecorderModule(singRecorder: SingRecorder,pitchModelExecutor: PitchModelExecutor) {
         singRecorderObject = singRecorder
+        pitchModelExecutorObject = pitchModelExecutor
     }
 
     fun startSinging() {
@@ -43,4 +46,9 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
         }
     }
 
+    override fun onCleared() {
+        super.onCleared()
+        pitchModelExecutorObject.close()
+        Log.e("CLEARED", "TRUE")
+    }
 }

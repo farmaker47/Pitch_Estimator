@@ -10,9 +10,11 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
+import com.george.pitch_estimator.PitchModelExecutor
 import com.george.pitch_estimator.SingRecorder
 import com.george.pitch_estimator.databinding.FragmentFirstBinding
 import org.koin.android.ext.android.get
+import org.koin.android.ext.android.getKoin
 import org.koin.android.viewmodel.ext.android.viewModel
 import java.io.File
 
@@ -24,6 +26,7 @@ class SingingFragment : Fragment() {
     private lateinit var binding: FragmentFirstBinding
     private val viewModel: SingingFragmentViewModel by viewModel()
     private lateinit var singRecorder: SingRecorder
+    private lateinit var pitchModelExecutor: PitchModelExecutor
 
     //Permissions
     var PERMISSION_ALL = 123
@@ -40,8 +43,10 @@ class SingingFragment : Fragment() {
         binding = FragmentFirstBinding.inflate(inflater)
         binding.lifecycleOwner = this
 
+        getKoin().setProperty("koinUseGpu", false)
         singRecorder = get()
-        viewModel.setSingRecorderModule(singRecorder)
+        pitchModelExecutor = get()
+        viewModel.setSingRecorderModule(singRecorder, pitchModelExecutor)
 
         binding.buttonForSinging.setOnClickListener {
 
@@ -62,7 +67,7 @@ class SingingFragment : Fragment() {
         return binding.root
     }
 
-    private fun generateFolder(){
+    private fun generateFolder() {
         val root =
             File(Environment.getExternalStorageDirectory(), "Pitch Estimator")
         if (!root.exists()) {

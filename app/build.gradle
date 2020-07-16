@@ -29,6 +29,10 @@ android {
         // viewBinding = true
     }
 
+    aaptOptions {
+        noCompress "tflite"
+    }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
@@ -60,5 +64,11 @@ dependencies {
     implementation "org.koin:koin-android-scope:$koin_version"
     // Koin Android ViewModel features
     implementation "org.koin:koin-android-viewmodel:$koin_version"
+
+    // TF-Lite
+    implementation 'org.tensorflow:tensorflow-lite:0.0.0-nightly'
+    implementation 'org.tensorflow:tensorflow-lite-gpu:0.0.0-nightly'
+    // for extra operations
+    implementation 'org.tensorflow:tensorflow-lite-select-tf-ops:0.0.0-nightly'
 
 }
