@@ -43,12 +43,14 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
             singRecorderObject.writeWav(stream)
             // reset stream
             singRecorderObject.reInitializePcmStream()
+
+            // Inference
+            pitchModelExecutorObject.execute()
         }
     }
 
     override fun onCleared() {
         super.onCleared()
         pitchModelExecutorObject.close()
-        Log.e("CLEARED", "TRUE")
     }
 }
