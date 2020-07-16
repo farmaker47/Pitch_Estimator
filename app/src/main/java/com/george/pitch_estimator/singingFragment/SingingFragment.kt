@@ -8,6 +8,7 @@ import android.os.Environment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
 import com.george.pitch_estimator.PitchModelExecutor
@@ -53,8 +54,12 @@ class SingingFragment : Fragment() {
             // Start writing .wav
             if (viewModel._singingRunning) {
                 viewModel.stopSinging()
+                binding.buttonForSinging.text = "Start singing"
+                Toast.makeText(activity,"Singing has stopped",Toast.LENGTH_LONG).show()
             } else {
                 viewModel.startSinging()
+                binding.buttonForSinging.text = "Stop singing"
+                Toast.makeText(activity,"Singing has started",Toast.LENGTH_LONG).show()
             }
         }
 
