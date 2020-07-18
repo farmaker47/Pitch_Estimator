@@ -5,9 +5,12 @@ import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
 import android.os.Environment
+import android.os.Process
 import android.util.Log
 import org.json.JSONObject
 import java.io.*
+import java.util.*
+import java.util.concurrent.locks.ReentrantLock
 
 class SingRecorder(
     private val mHotwordKey: String,
@@ -28,9 +31,11 @@ class SingRecorder(
             .build()
     lateinit var mPcmStream: ByteArrayOutputStream
     private var mRecorder: AudioRecord? = null
+
     //private var mRecorderVad: AudioRecord? = null
     private var mRecording: Boolean = true
     private var mThread: Thread? = null
+
     //private var mVadThread: Thread? = null
     private val mSampleLengths: DoubleArray
     private var mSamplesTaken: Int
@@ -44,6 +49,18 @@ class SingRecorder(
     private val mMinimumVoice = 100
     private val mMaximumSilence = 700
     private val mUpperLimit = 100
+
+    // From commands
+    private var recordingThread: Thread? = null
+    var shouldContinue = true
+    private val SAMPLE_DURATION_MS = 1000
+    private val RECORDING_LENGTH = (SAMPLE_RATE * SAMPLE_DURATION_MS / 1000) as Int
+    var recordingBuffer = ShortArray(RECORDING_LENGTH)
+    private val recordingBufferLock = ReentrantLock()
+    var recordingOffset = 0
+    private var recognitionThread: Thread? = null
+    var shouldContinueRecognition = true
+    var buffer = ShortArray(BUFFER_SIZE)
 
     //Listener
     //private val mWordListener: HotwordSpeechListener
@@ -77,10 +94,166 @@ class SingRecorder(
         mVadThread!!.start()*/
     }
 
+    /*fun startRecordingCommands() {
+        if (recordingThread != null) {
+            return
+        }
+        shouldContinue = true
+        recordingThread = Thread(
+            Runnable { recordCommands() })
+        recordingThread?.start()
+    }*/
+
+   /* private fun recordCommands() {
+        Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO)
+
+        // Estimate the buffer size we'll need for this device.
+        var bufferSize = AudioRecord.getMinBufferSize(
+            SAMPLE_RATE,
+            AudioFormat.CHANNEL_IN_MONO,
+            AudioFormat.ENCODING_PCM_16BIT
+        )
+        if (bufferSize == AudioRecord.ERROR || bufferSize == AudioRecord.ERROR_BAD_VALUE) {
+            bufferSize = SAMPLE_RATE * 2
+        }
+        val audioBuffer = ShortArray(bufferSize / 2)
+        val record = AudioRecord(
+            MediaRecorder.AudioSource.DEFAULT,
+            SAMPLE_RATE,
+            AudioFormat.CHANNEL_IN_MONO,
+            AudioFormat.ENCODING_PCM_16BIT,
+            bufferSize
+        )
+        if (record.state != AudioRecord.STATE_INITIALIZED) {
+            Log.e(
+                "AUDIO_RECORD",
+                "Audio Record can't initialize!"
+            )
+            return
+        }
+        record.startRecording()
+        *//*Log.v(
+            ,
+            "Start recording"
+        )*//*
+
+        // Loop, gathering audio data and copying it to a round-robin buffer.
+        while (shouldContinue) {
+            val numberRead = record.read(audioBuffer, 0, audioBuffer.size)
+            val maxLength: Int = recordingBuffer.size
+            val newRecordingOffset: Int = recordingOffset + numberRead
+            val secondCopyLength = Math.max(0, newRecordingOffset - maxLength)
+            val firstCopyLength = numberRead - secondCopyLength
+            // We store off all the data for the recognition thread to access. The ML
+            // thread will copy out of this buffer into its own, while holding the
+            // lock, so this should be thread safe.
+            recordingBufferLock.lock()
+            try {
+                System.arraycopy(
+                    audioBuffer,
+                    0,
+                    recordingBuffer,
+                    recordingOffset,
+                    firstCopyLength
+                )
+                System.arraycopy(
+                    audioBuffer,
+                    firstCopyLength,
+                    recordingBuffer,
+                    0,
+                    secondCopyLength
+                )
+                recordingOffset = newRecordingOffset % maxLength
+            } finally {
+                recordingBufferLock.unlock()
+            }
+        }
+        record.stop()
+        record.release()
+    }
+
+    @Synchronized
+    fun startRecognitionCommands() {
+        if (recognitionThread != null) {
+            return
+        }
+        shouldContinueRecognition = true
+        recognitionThread = Thread(
+            Runnable { recognizeCommands() })
+        recognitionThread?.start()
+    }
+
+    private fun recognizeCommands() {
+
+        val inputBuffer =
+            ShortArray(RECORDING_LENGTH)
+        val floatInputBuffer = Array(
+            RECORDING_LENGTH
+        ) { FloatArray(1) }
+        val sampleRateList =
+            intArrayOf(SAMPLE_RATE)
+
+        // Loop, grabbing recorded data and running the recognition model on it.
+        while (shouldContinueRecognition) {
+            //val startTime = Date().time
+            // The recording thread places data in this round-robin buffer, so lock to
+            // make sure there's no writing happening and then copy it to our own
+            // local version.
+            recordingBufferLock.lock()
+            try {
+                val maxLength = recordingBuffer.size
+                val firstCopyLength = maxLength - recordingOffset
+                val secondCopyLength = recordingOffset
+                System.arraycopy(
+                    recordingBuffer,
+                    recordingOffset,
+                    inputBuffer,
+                    0,
+                    firstCopyLength
+                )
+                System.arraycopy(
+                    recordingBuffer,
+                    0,
+                    inputBuffer,
+                    firstCopyLength,
+                    secondCopyLength
+                )
+            } finally {
+                recordingBufferLock.unlock()
+            }
+
+            // We need to feed in float values between -1.0f and 1.0f, so divide the
+            // signed 16-bit inputs.
+            for (i in 0 until RECORDING_LENGTH) {
+                floatInputBuffer[i][0] = inputBuffer[i] / 32767.0f
+            }
+            Log.e("FLOATINPUTBUFFER", inputBuffer.takeLast(100).toString())
+        }
+
+    }
+
+    @Synchronized
+    fun stopRecordingCommands() {
+        if (recordingThread == null) {
+            return
+        }
+        shouldContinue = false
+        recordingThread = null
+    }
+
+    @Synchronized
+    fun stopRecognitionCommands() {
+        if (recognitionThread == null) {
+            return
+        }
+        shouldContinueRecognition = false
+        recognitionThread = null
+    }*/
+
     /**
      * Stop the recording process.
      */
-    fun stopRecording(): ByteArrayOutputStream{
+    fun stopRecording(): ByteArrayOutputStream {
         if (mRecorder != null && mRecorder!!.state == AudioRecord.STATE_INITIALIZED) {
             mRecording = false
             mRecorder!!.stop()
@@ -95,6 +268,10 @@ class SingRecorder(
             // mPcmStream again to 0
             //mPcmStream = ByteArrayOutputStream()
             //Log.e("STREAM_PCM_After", mPcmStream.size().toString())
+
+            // Short array commands
+            Log.e("BUFFER_SHORT", buffer.takeLast(100).toString())
+            Log.e("BUFFER_SHORT_SIZE", buffer.size.toString())
         }
         return mPcmStream
     }
@@ -104,7 +281,7 @@ class SingRecorder(
      */
     private val readAudio = Runnable {
         var readBytes: Int
-        val buffer = ShortArray(BUFFER_SIZE)
+        buffer = ShortArray(BUFFER_SIZE)
         while (mRecording) {
             readBytes = mRecorder!!.read(buffer, 0, BUFFER_SIZE)
 
@@ -281,6 +458,7 @@ class SingRecorder(
     ) {
         output.write(value.toInt())
         output.write(value.toInt() shr 8)
+        //Log.e("WRITE_SHORT", output.toByteArray().takeLast(100).toString())
     }
 
     /**
@@ -407,7 +585,7 @@ class SingRecorder(
         const val FRAME_SIZE = 80
     }
 
-    fun reInitializePcmStream(){
+    fun reInitializePcmStream() {
         mPcmStream = ByteArrayOutputStream()
     }
 

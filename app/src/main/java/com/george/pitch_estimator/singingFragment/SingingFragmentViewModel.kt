@@ -33,10 +33,15 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
         _singingRunning = true
 
         singRecorderObject.startRecording()
-
+        //singRecorderObject.startRecordingCommands()
+        //singRecorderObject.startRecognitionCommands()
     }
 
     fun stopSinging() {
+
+        //singRecorderObject.stopRecordingCommands()
+        //singRecorderObject.stopRecognitionCommands()
+
         val stream = singRecorderObject.stopRecording()
         _singingRunning = false
         viewModelScope.launch {
@@ -47,7 +52,6 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
 
             // Inference
             pitchModelExecutorObject.execute()
-
 
             // Load dummy sound file for practice and calibration/ comparison with Colab notebook
             doInference("/sdcard/Pitch Estimator/soloupis.wav")
@@ -105,6 +109,7 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
             wholeSentence += _m.stt(shorts, shorts.size).toString() + ". "
             inferenceExecTime[0] = System.currentTimeMillis() - inferenceStartTime*/
         } catch (ex: FileNotFoundException) {
+
         } catch (ex: IOException) {
         }
     }
