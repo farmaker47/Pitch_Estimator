@@ -37,12 +37,12 @@ class PitchModelExecutor(
         private const val PITCH_MODEL = "lite-model_spice_1.tflite"
     }
 
-    fun execute() {
+    fun execute(floatsInput:FloatArray) {
 
         predictTime = System.currentTimeMillis()
-        val inputSize = 16000 // ~10 seconds of sound
+        val inputSize = floatsInput.size // ~10 seconds of sound
         val outputSize = Math.ceil(inputSize / 512.0).toInt()
-        val inputValues = FloatArray(inputSize)
+        val inputValues = floatsInput//FloatArray(inputSize)
 
         val inputs = arrayOf<Any>(inputValues)
         val outputs = HashMap<Int, Any>()
@@ -51,14 +51,14 @@ class PitchModelExecutor(
 
         outputs[0] = pitches
         outputs[1] = uncertainties
-        Log.i("INPUTS_SIZE", inputs[0].toString())
+        //Log.e("INPUTS_SIZE", floatsInput[0].toString())
         interpreter.runForMultipleInputsOutputs(inputs, outputs)
 
         predictTime = System.currentTimeMillis() - predictTime
 
-        Log.i("PITCHES", pitches.contentToString())
-        Log.i("PITCHES_SIZE", pitches.size.toString())
-        Log.i("TIME", predictTime.toString())
+        Log.e("PITCHES", pitches.contentToString())
+        Log.e("PITCHES_SIZE", pitches.size.toString())
+        Log.e("TIME", predictTime.toString())
 
     }
 
@@ -95,6 +95,5 @@ class PitchModelExecutor(
 
     fun close() {
         interpreter.close()
-        gpuDelegate.close()
     }
 }

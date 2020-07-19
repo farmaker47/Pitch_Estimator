@@ -6,12 +6,14 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.george.pitch_estimator.PitchModelExecutor
 import com.george.pitch_estimator.SingRecorder
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.ByteArrayOutputStream
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.io.RandomAccessFile
 import kotlin.experimental.and
-import kotlin.experimental.or
 
 class SingingFragmentViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -43,50 +45,66 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
         //singRecorderObject.stopRecognitionCommands()
 
         val stream = singRecorderObject.stopRecording()
+        val streamForInference = singRecorderObject.stopRecordingForInference()
+
+        Log.e("VIEWMODEL", streamForInference.size.toString())
+        Log.e("VIEWMODEL_VALUES", streamForInference.takeLast(100).toString())
         _singingRunning = false
         viewModelScope.launch {
-            // write .wav file to external directory
-            singRecorderObject.writeWav(stream)
-            // reset stream
-            singRecorderObject.reInitializePcmStream()
-
-            // Inference
-            pitchModelExecutorObject.execute()
-
-            // Load dummy sound file for practice and calibration/ comparison with Colab notebook
-            doInference("/sdcard/Pitch Estimator/soloupis.wav")
+            doInference(stream, streamForInference)
         }
     }
 
-    private fun doInference(audioFile: String) {
+    private suspend fun doInference(stream: ByteArrayOutputStream, arrayListShorts: ArrayList<Short>) = withContext(Dispatchers.IO) {
+        // write .wav file to external directory
+        singRecorderObject.writeWav(stream)
+        // reset stream
+        singRecorderObject.reInitializePcmStream()
+
+
+        val floatsForInference = FloatArray(arrayListShorts.size)
+        for ((index,value) in arrayListShorts.withIndex()){
+            floatsForInference[index] = (value / 65536F)
+        }
+
+        Log.e("FLOATS", floatsForInference.takeLast(100).toString())
+
+        // Inference
+            pitchModelExecutorObject.execute(floatsForInference)
+
+        // Load dummy sound file for practice and calibration/ comparison with Colab notebook
+        transcribe("/sdcard/Pitch Estimator/soloupis.wav")
+    }
+
+    private fun transcribe(audioFile: String) {
         val inferenceExecTime = longArrayOf(0)
-        Log.e("AUDIO_FORMAT", "audioFormat.toString()")
+        //Log.e("AUDIO_FORMAT", "audioFormat.toString()")
         try {
             val wave = RandomAccessFile(audioFile, "r")
             wave.seek(20)
             val audioFormat: Char = readLEChar(wave)
-            Log.e("AUDIO_FORMAT", (audioFormat.toInt() == 1).toString())
+            //Log.e("AUDIO_FORMAT", (audioFormat.toInt() == 1).toString())
             assert(
                 audioFormat.toInt() == 1 // 1 is PCM
             )
             // tv_audioFormat.setText("audioFormat=" + (audioFormat == 1 ? "PCM" : "!PCM"));
             wave.seek(22)
             val numChannels: Char = readLEChar(wave)
-            Log.e("NUMBER_CHANNEL", (numChannels.toInt()).toString())
+            //Log.e("NUMBER_CHANNEL", (numChannels.toInt()).toString())
             assert(
                 numChannels.toInt() == 1 // MONO
             )
             // tv_numChannels.setText("numChannels=" + (numChannels == 1 ? "MONO" : "!MONO"));
             wave.seek(24)
             val sampleRate: Int = readLEInt(wave)
-            Log.e("SAMPLE_RATE", (sampleRate).toString())
+            //Log.e("SAMPLE_RATE", (sampleRate).toString())
             assert(
                 sampleRate == 16000// // desired sample rate
             )
             // tv_sampleRate.setText("sampleRate=" + (sampleRate == 16000 ? "16kHz" : "!16kHz"));
             wave.seek(34)
             val bitsPerSample: Char = readLEChar(wave)
-            Log.e("BITS_PER_SAMPLE", (bitsPerSample.toInt() == 16).toString())
+            //Log.e("BITS_PER_SAMPLE", (bitsPerSample.toInt() == 16).toString())
             assert(
                 bitsPerSample.toInt() == 16 // 16 bits per sample
             )

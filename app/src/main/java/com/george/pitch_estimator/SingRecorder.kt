@@ -5,12 +5,13 @@ import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
 import android.os.Environment
-import android.os.Process
 import android.util.Log
 import org.json.JSONObject
+import org.tensorflow.lite.Interpreter
+import org.tensorflow.lite.gpu.GpuDelegate
 import java.io.*
-import java.util.*
-import java.util.concurrent.locks.ReentrantLock
+import java.nio.MappedByteBuffer
+import java.nio.channels.FileChannel
 
 class SingRecorder(
     private val mHotwordKey: String,
@@ -20,8 +21,8 @@ class SingRecorder(
     //listener: HotwordSpeechListener
 ) {
     private val AUDIO_SOURCE = MediaRecorder.AudioSource.VOICE_RECOGNITION
-    private val CHANNEL_MASK = AudioFormat.CHANNEL_IN_MONO
     private val SAMPLE_RATE = 16000
+    private val CHANNEL_MASK = AudioFormat.CHANNEL_IN_MONO
     private val ENCODING = AudioFormat.ENCODING_PCM_16BIT
     private val BUFFER_SIZE = AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNEL_MASK, ENCODING)
     private val AUDIO_FORMAT =
@@ -51,7 +52,7 @@ class SingRecorder(
     private val mUpperLimit = 100
 
     // From commands
-    private var recordingThread: Thread? = null
+    /*private var recordingThread: Thread? = null
     var shouldContinue = true
     private val SAMPLE_DURATION_MS = 1000
     private val RECORDING_LENGTH = (SAMPLE_RATE * SAMPLE_DURATION_MS / 1000) as Int
@@ -60,7 +61,9 @@ class SingRecorder(
     var recordingOffset = 0
     private var recognitionThread: Thread? = null
     var shouldContinueRecognition = true
+    var buffer = ShortArray(BUFFER_SIZE)*/
     var buffer = ShortArray(BUFFER_SIZE)
+    var bufferForInference = arrayListOf<Short>()
 
     //Listener
     //private val mWordListener: HotwordSpeechListener
@@ -84,14 +87,79 @@ class SingRecorder(
 
         //mVad.start();
         done = false
+        mRecording = true
         mRecorder?.startRecording()
         //mRecorderVad?.startRecording()
-        mRecording = true
         mThread = Thread(readAudio)
         mThread!!.start()
 
         /*mVadThread = Thread(readVad)
         mVadThread!!.start()*/
+    }
+
+    fun stopRecording(): ByteArrayOutputStream {
+        if (mRecorder != null && mRecorder!!.state == AudioRecord.STATE_INITIALIZED) {
+            mRecording = false
+            mRecorder!!.stop()
+
+            //mVad.stop();
+            //mRecorderVad!!.stop()
+            done = true
+
+            /*val runner = AsyncTaskRunner()
+            runner.execute(mPcmStream)*/
+
+            // mPcmStream again to 0
+            //mPcmStream = ByteArrayOutputStream()
+            //Log.e("STREAM_PCM_After", mPcmStream.size().toString())
+
+            // Short array commands
+            Log.e("BUFFER_SHORT", buffer.takeLast(100).toString())
+            //Log.e("BUFFER_SHORT_SIZE", buffer.size.toString())
+        }
+        return mPcmStream
+    }
+
+    fun stopRecordingForInference(): ArrayList<Short>{
+        return bufferForInference
+    }
+
+    /**
+     * Read audio from the audio recorder stream.
+     */
+    private val readAudio = Runnable {
+        var readBytes: Int
+        buffer = ShortArray(BUFFER_SIZE)
+        while (mRecording) {
+            readBytes = mRecorder!!.read(buffer, 0, BUFFER_SIZE)
+
+            //Higher volume of microphone
+            //https://stackoverflow.com/questions/25441166/how-to-adjust-microphone-sensitivity-while-recording-audio-in-android
+            if (readBytes > 0) {
+                for (i in 0 until readBytes) {
+                    buffer[i] = Math.min(
+                        (buffer[i] * 6.7).toInt(),
+                        Short.MAX_VALUE.toInt()
+                    ).toShort()
+                }
+            }
+            if (readBytes != AudioRecord.ERROR_INVALID_OPERATION) {
+                for (s in buffer) {
+
+                    // Add all values to arraylist
+                    bufferForInference.add(s)
+
+                    writeShort(mPcmStream, s)
+                }
+            }
+        }
+        //Log.e("READ_AUDIO_BUFFER", buffer.size.toString())
+        //Log.e("PCMSTREam", mPcmStream.size().toString())
+        //Log.e("BUFFER_FOR_INFER_SIZE", bufferForInference.size.toString())
+        //Log.e("BUFFER_FOR_INFER_VALUES", bufferForInference.takeLast(100).toString())
+
+        /*mRecorder.release();
+                    mRecorder = null;*/
     }
 
     /*fun startRecordingCommands() {
@@ -104,35 +172,35 @@ class SingRecorder(
         recordingThread?.start()
     }*/
 
-   /* private fun recordCommands() {
-        Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO)
+    /* private fun recordCommands() {
+         Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO)
 
-        // Estimate the buffer size we'll need for this device.
-        var bufferSize = AudioRecord.getMinBufferSize(
-            SAMPLE_RATE,
-            AudioFormat.CHANNEL_IN_MONO,
-            AudioFormat.ENCODING_PCM_16BIT
-        )
-        if (bufferSize == AudioRecord.ERROR || bufferSize == AudioRecord.ERROR_BAD_VALUE) {
-            bufferSize = SAMPLE_RATE * 2
-        }
-        val audioBuffer = ShortArray(bufferSize / 2)
-        val record = AudioRecord(
-            MediaRecorder.AudioSource.DEFAULT,
-            SAMPLE_RATE,
-            AudioFormat.CHANNEL_IN_MONO,
-            AudioFormat.ENCODING_PCM_16BIT,
-            bufferSize
-        )
-        if (record.state != AudioRecord.STATE_INITIALIZED) {
-            Log.e(
-                "AUDIO_RECORD",
-                "Audio Record can't initialize!"
-            )
-            return
-        }
-        record.startRecording()
-        *//*Log.v(
+         // Estimate the buffer size we'll need for this device.
+         var bufferSize = AudioRecord.getMinBufferSize(
+             SAMPLE_RATE,
+             AudioFormat.CHANNEL_IN_MONO,
+             AudioFormat.ENCODING_PCM_16BIT
+         )
+         if (bufferSize == AudioRecord.ERROR || bufferSize == AudioRecord.ERROR_BAD_VALUE) {
+             bufferSize = SAMPLE_RATE * 2
+         }
+         val audioBuffer = ShortArray(bufferSize / 2)
+         val record = AudioRecord(
+             MediaRecorder.AudioSource.DEFAULT,
+             SAMPLE_RATE,
+             AudioFormat.CHANNEL_IN_MONO,
+             AudioFormat.ENCODING_PCM_16BIT,
+             bufferSize
+         )
+         if (record.state != AudioRecord.STATE_INITIALIZED) {
+             Log.e(
+                 "AUDIO_RECORD",
+                 "Audio Record can't initialize!"
+             )
+             return
+         }
+         record.startRecording()
+         *//*Log.v(
             ,
             "Start recording"
         )*//*
@@ -253,58 +321,6 @@ class SingRecorder(
     /**
      * Stop the recording process.
      */
-    fun stopRecording(): ByteArrayOutputStream {
-        if (mRecorder != null && mRecorder!!.state == AudioRecord.STATE_INITIALIZED) {
-            mRecording = false
-            mRecorder!!.stop()
-
-            //mVad.stop();
-            //mRecorderVad!!.stop()
-            done = true
-            Log.i("STREAM_PCM", mPcmStream.size().toString())
-            /*val runner = AsyncTaskRunner()
-            runner.execute(mPcmStream)*/
-
-            // mPcmStream again to 0
-            //mPcmStream = ByteArrayOutputStream()
-            //Log.e("STREAM_PCM_After", mPcmStream.size().toString())
-
-            // Short array commands
-            Log.e("BUFFER_SHORT", buffer.takeLast(100).toString())
-            Log.e("BUFFER_SHORT_SIZE", buffer.size.toString())
-        }
-        return mPcmStream
-    }
-
-    /**
-     * Read audio from the audio recorder stream.
-     */
-    private val readAudio = Runnable {
-        var readBytes: Int
-        buffer = ShortArray(BUFFER_SIZE)
-        while (mRecording) {
-            readBytes = mRecorder!!.read(buffer, 0, BUFFER_SIZE)
-
-            //Higher volume of microphone
-            //https://stackoverflow.com/questions/25441166/how-to-adjust-microphone-sensitivity-while-recording-audio-in-android
-            if (readBytes > 0) {
-                for (i in 0 until readBytes) {
-                    buffer[i] = Math.min(
-                        (buffer[i] * 6.7).toInt(),
-                        Short.MAX_VALUE.toInt()
-                    ).toShort()
-                }
-            }
-            if (readBytes != AudioRecord.ERROR_INVALID_OPERATION) {
-                for (s in buffer) {
-                    writeShort(mPcmStream, s)
-                }
-            }
-        }
-
-        /*mRecorder.release();
-                    mRecorder = null;*/
-    }
     /*private val readVad = Runnable {
         try {
             var vad = 0
@@ -458,7 +474,6 @@ class SingRecorder(
     ) {
         output.write(value.toInt())
         output.write(value.toInt() shr 8)
-        //Log.e("WRITE_SHORT", output.toByteArray().takeLast(100).toString())
     }
 
     /**
@@ -519,7 +534,7 @@ class SingRecorder(
         var wav = ByteArray(0)
         try {
             wav = pcmToWav(byteArrayOutputStream)
-            Log.i("WAV_size", wav.size.toString())
+            //Log.e("WAV_size", wav.size.toString())
         } catch (e: IOException) {
             e.printStackTrace()
         }
@@ -597,5 +612,8 @@ class SingRecorder(
         mContext = context
         //mVad = vad
         //mWordListener = listener
+
     }
+
+
 }
