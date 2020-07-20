@@ -12,6 +12,7 @@ import java.nio.MappedByteBuffer
 import java.nio.channels.FileChannel
 import java.util.*
 import kotlin.collections.HashMap
+import kotlin.math.ceil
 
 class PitchModelExecutor(
     context: Context,
@@ -41,17 +42,18 @@ class PitchModelExecutor(
 
         predictTime = System.currentTimeMillis()
         val inputSize = floatsInput.size // ~10 seconds of sound
-        val outputSize = Math.ceil(inputSize / 512.0).toInt()
+        val outputSize = ceil(inputSize / 512.0).toInt()
         val inputValues = floatsInput//FloatArray(inputSize)
 
         val inputs = arrayOf<Any>(inputValues)
         val outputs = HashMap<Int, Any>()
+
         val pitches = FloatArray(outputSize)
         val uncertainties = FloatArray(outputSize)
 
         outputs[0] = pitches
         outputs[1] = uncertainties
-        //Log.e("INPUTS_SIZE", floatsInput[0].toString())
+        //Log.e("INPUTS_SIZE", floatsInput.size.toString())
         interpreter.runForMultipleInputsOutputs(inputs, outputs)
 
         predictTime = System.currentTimeMillis() - predictTime

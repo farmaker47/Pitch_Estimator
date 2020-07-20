@@ -30,7 +30,7 @@ class SingRecorder(
             .setSampleRate(SAMPLE_RATE)
             .setChannelMask(CHANNEL_MASK)
             .build()
-    lateinit var mPcmStream: ByteArrayOutputStream
+    var mPcmStream: ByteArrayOutputStream
     private var mRecorder: AudioRecord? = null
 
     //private var mRecorderVad: AudioRecord? = null
@@ -63,13 +63,18 @@ class SingRecorder(
     var shouldContinueRecognition = true
     var buffer = ShortArray(BUFFER_SIZE)*/
     var buffer = ShortArray(BUFFER_SIZE)
-    var bufferForInference = arrayListOf<Short>()
+    var bufferForInference: ArrayList<Short>//= arrayListOf<Short>()
 
-    //Listener
-    //private val mWordListener: HotwordSpeechListener
+    init {
+        mPcmStream = ByteArrayOutputStream()
+        bufferForInference = arrayListOf()
+        mRecording = false
+        mSampleLengths = DoubleArray(numberRecordings)
+        mSamplesTaken = 0
+        mContext = context
+        //mVad = vad
+        //mWordListener = listener
 
-    interface HotwordSpeechListener {
-        fun onSpeechChange(speechInt: Int)
     }
 
     /**
@@ -100,27 +105,18 @@ class SingRecorder(
     fun stopRecording(): ByteArrayOutputStream {
         if (mRecorder != null && mRecorder!!.state == AudioRecord.STATE_INITIALIZED) {
             mRecording = false
-            mRecorder!!.stop()
+            mRecorder?.stop()
+            mRecorder?.release();
+            mRecorder = null;
 
             //mVad.stop();
             //mRecorderVad!!.stop()
             done = true
-
-            /*val runner = AsyncTaskRunner()
-            runner.execute(mPcmStream)*/
-
-            // mPcmStream again to 0
-            //mPcmStream = ByteArrayOutputStream()
-            //Log.e("STREAM_PCM_After", mPcmStream.size().toString())
-
-            // Short array commands
-            Log.e("BUFFER_SHORT", buffer.takeLast(100).toString())
-            //Log.e("BUFFER_SHORT_SIZE", buffer.size.toString())
         }
         return mPcmStream
     }
 
-    fun stopRecordingForInference(): ArrayList<Short>{
+    fun stopRecordingForInference(): ArrayList<Short> {
         return bufferForInference
     }
 
@@ -157,9 +153,6 @@ class SingRecorder(
         //Log.e("PCMSTREam", mPcmStream.size().toString())
         //Log.e("BUFFER_FOR_INFER_SIZE", bufferForInference.size.toString())
         //Log.e("BUFFER_FOR_INFER_VALUES", bufferForInference.takeLast(100).toString())
-
-        /*mRecorder.release();
-                    mRecorder = null;*/
     }
 
     /*fun startRecordingCommands() {
@@ -427,29 +420,6 @@ class SingRecorder(
     }
 
     /**
-     * Validate this recording.
-     *
-     * @return Boolean indicating whether or not the sample is valid.
-     */
-    /*fun validateSample(): Boolean {
-        if (mSamplesTaken >= mSampleLengths.size) {
-            return false
-        }
-        trimSilence()
-        val seconds = mPcmStream.size() / SAMPLE_RATE.toDouble()
-        if (seconds > 5) {
-            return false
-        }
-        for (i in 0 until mSamplesTaken) {
-            if (Math.abs(mSampleLengths[i] - seconds) > 0.3) {
-                return false
-            }
-        }
-        mSampleLengths[mSamplesTaken++] = seconds
-        return true
-    }*/
-
-    /**
      * Write a 32-bit integer to an output stream, in Little Endian format.
      *
      * @param output Output stream
@@ -564,56 +534,13 @@ class SingRecorder(
         }
     }
 
-    /**
-     * Write a JSON config file for this hotword.
-     *
-     * @param output Output file
-     * @throws IOException
-     */
-    @Throws(IOException::class)
-    fun writeConfig(output: File?) {
-        val config = generateConfig().toString().toByteArray()
-        var stream: FileOutputStream? = null
-        try {
-            stream = FileOutputStream(output)
-            stream.write(config)
-        } finally {
-            stream?.close()
-        }
-    }
-
-    /*//AsyncTask for write .wav
-    private inner class AsyncTaskRunner :
-        AsyncTask<ByteArrayOutputStream?, String?, String?>() {
-        protected override fun doInBackground(vararg byteArrayOutputStreams: ByteArrayOutputStream): String? {
-            Log.i("ASYNC_BACK", byteArrayOutputStreams[0].size().toString())
-            writeWav(byteArrayOutputStreams[0])
-            return null
-        }
-
-        override fun onPostExecute(s: String?) {
-            //Toast.makeText(mContext, s, Toast.LENGTH_SHORT).show();
-        }
-    }*/
-
     companion object {
         const val FRAME_SIZE = 80
     }
 
     fun reInitializePcmStream() {
         mPcmStream = ByteArrayOutputStream()
+        bufferForInference = arrayListOf()
     }
-
-    init {
-        mPcmStream = ByteArrayOutputStream()
-        mRecording = false
-        mSampleLengths = DoubleArray(numberRecordings)
-        mSamplesTaken = 0
-        mContext = context
-        //mVad = vad
-        //mWordListener = listener
-
-    }
-
 
 }

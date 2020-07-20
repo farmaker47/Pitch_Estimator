@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Environment
+import android.os.Handler
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -36,6 +37,26 @@ class SingingFragment : Fragment() {
         Manifest.permission.WRITE_EXTERNAL_STORAGE
     )
 
+    //update interval for widget
+    val UPDATE_INTERVAL = 2048L
+
+    //Handler to repeat update
+    private val updateWidgetHandler = Handler()
+
+    //runnable to loop every 2 seconds with writing sound and infering
+    private var updateWidgetRunnable: Runnable = Runnable {
+        run {
+            //Update UI
+            viewModel.stopSinging()
+            viewModel.startSinging()
+
+            // Re-run it after the update interval
+            updateWidgetHandler.postDelayed(updateWidgetRunnable, UPDATE_INTERVAL)
+
+        }
+
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -53,11 +74,16 @@ class SingingFragment : Fragment() {
 
             // Start writing .wav
             if (viewModel._singingRunning) {
-                viewModel.stopSinging()
+
+                // Remove callback to stop collecting sound
+                updateWidgetHandler.removeCallbacks(updateWidgetRunnable)
+
                 binding.buttonForSinging.text = "Start singing"
                 Toast.makeText(activity,"Singing has stopped",Toast.LENGTH_LONG).show()
             } else {
                 viewModel.startSinging()
+                updateWidgetHandler.postDelayed(updateWidgetRunnable, UPDATE_INTERVAL)
+
                 binding.buttonForSinging.text = "Stop singing"
                 Toast.makeText(activity,"Singing has started",Toast.LENGTH_LONG).show()
             }

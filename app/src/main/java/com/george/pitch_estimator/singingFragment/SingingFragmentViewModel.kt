@@ -41,42 +41,42 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
 
     fun stopSinging() {
 
-        //singRecorderObject.stopRecordingCommands()
-        //singRecorderObject.stopRecognitionCommands()
-
         val stream = singRecorderObject.stopRecording()
         val streamForInference = singRecorderObject.stopRecordingForInference()
 
-        Log.e("VIEWMODEL", streamForInference.size.toString())
+        Log.e("VIEWMODEL_SIZE", streamForInference.size.toString())
         Log.e("VIEWMODEL_VALUES", streamForInference.takeLast(100).toString())
+
         _singingRunning = false
         viewModelScope.launch {
             doInference(stream, streamForInference)
         }
     }
 
-    private suspend fun doInference(stream: ByteArrayOutputStream, arrayListShorts: ArrayList<Short>) = withContext(Dispatchers.IO) {
+    private suspend fun doInference(
+        stream: ByteArrayOutputStream,
+        arrayListShorts: ArrayList<Short>
+    ) = withContext(Dispatchers.IO) {
         // write .wav file to external directory
         singRecorderObject.writeWav(stream)
         // reset stream
         singRecorderObject.reInitializePcmStream()
 
-
         val floatsForInference = FloatArray(arrayListShorts.size)
-        for ((index,value) in arrayListShorts.withIndex()){
+        for ((index, value) in arrayListShorts.withIndex()) {
             floatsForInference[index] = (value / 65536F)
         }
 
         Log.e("FLOATS", floatsForInference.takeLast(100).toString())
 
         // Inference
-            pitchModelExecutorObject.execute(floatsForInference)
+        pitchModelExecutorObject.execute(floatsForInference)
 
         // Load dummy sound file for practice and calibration/ comparison with Colab notebook
-        transcribe("/sdcard/Pitch Estimator/soloupis.wav")
+        //transcribe("/sdcard/Pitch Estimator/soloupis.wav")
     }
 
-    private fun transcribe(audioFile: String) {
+    /*private fun transcribe(audioFile: String) {
         val inferenceExecTime = longArrayOf(0)
         //Log.e("AUDIO_FORMAT", "audioFormat.toString()")
         try {
@@ -118,14 +118,14 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
             wave.readFully(bytes)
 
 
-            /*Log.i("BYTES", bytes.size.toString())
+            *//*Log.i("BYTES", bytes.size.toString())
             val shorts = ShortArray(bytes.size / 2)
             // to turn bytes to shorts as either big endian or little endian.
             ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer()[shorts]
             val inferenceStartTime = System.currentTimeMillis()
             Log.i("SHORTS", shorts.size.toString())
             wholeSentence += _m.stt(shorts, shorts.size).toString() + ". "
-            inferenceExecTime[0] = System.currentTimeMillis() - inferenceStartTime*/
+            inferenceExecTime[0] = System.currentTimeMillis() - inferenceStartTime*//*
         } catch (ex: FileNotFoundException) {
 
         } catch (ex: IOException) {
@@ -147,7 +147,7 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
         val b4 = f.readByte()
         return ((b1 and 0xFF.toByte()).toInt() or ((b2 and 0xFF.toByte()).toInt() shl 8)
                 or ((b3 and 0xFF.toByte()).toInt() shl 16) or ((b4 and 0xFF.toByte()).toInt() shl 24))
-    }
+    }*/
 
     override fun onCleared() {
         super.onCleared()
