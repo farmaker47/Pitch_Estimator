@@ -6,15 +6,20 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Environment
 import android.os.Handler
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.AnimationUtils
+import android.view.animation.BounceInterpolator
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
 import com.george.pitch_estimator.PitchModelExecutor
+import com.george.pitch_estimator.R
 import com.george.pitch_estimator.SingRecorder
 import com.george.pitch_estimator.databinding.FragmentFirstBinding
+import org.koin.android.ext.android.bind
 import org.koin.android.ext.android.get
 import org.koin.android.ext.android.getKoin
 import org.koin.android.viewmodel.ext.android.viewModel
@@ -78,20 +83,24 @@ class SingingFragment : Fragment() {
 
         binding.buttonForSinging.setOnClickListener {
 
-            // Start writing .wav
             if (viewModel._singingRunning) {
-
                 // Remove callback to stop collecting sound
                 updateWidgetHandler.removeCallbacks(updateWidgetRunnable)
 
-                binding.buttonForSinging.text = "Start singing"
+                binding.buttonAnimated.clearAnimation()
+
+                //binding.buttonForSinging.text = "Start singing"
                 Toast.makeText(activity,"Singing has stopped",Toast.LENGTH_LONG).show()
             } else {
-                //viewModel.startSinging()
+                // Start animation
+                animateSharkButton()
+                // Start immediately
                 updateWidgetHandler.postDelayed(updateWidgetRunnable, 0)
 
-                binding.buttonForSinging.text = "Stop singing"
+                //binding.buttonForSinging.text = "Stop singing"
                 Toast.makeText(activity,"Singing has started",Toast.LENGTH_LONG).show()
+
+
             }
         }
 
@@ -104,6 +113,11 @@ class SingingFragment : Fragment() {
         return binding.root
     }
 
+    private fun animateSharkButton() {
+        val animation = AnimationUtils.loadAnimation(activity, R.anim.scale_anim)
+        binding.buttonAnimated.startAnimation(animation)
+    }
+
     private fun generateFolder() {
         val root =
             File(Environment.getExternalStorageDirectory(), "Pitch Estimator")
@@ -112,7 +126,7 @@ class SingingFragment : Fragment() {
         }
     }
 
-    fun hasPermissions(
+    private fun hasPermissions(
         context: Context?,
         vararg permissions: String?
     ): Boolean {
