@@ -8,11 +8,13 @@ import org.tensorflow.lite.Interpreter
 import org.tensorflow.lite.gpu.GpuDelegate
 import java.io.FileInputStream
 import java.io.IOException
+import java.lang.Exception
 import java.nio.MappedByteBuffer
 import java.nio.channels.FileChannel
 import java.util.*
 import kotlin.collections.HashMap
 import kotlin.math.ceil
+import kotlin.math.floor
 
 class PitchModelExecutor(
     context: Context,
@@ -38,11 +40,15 @@ class PitchModelExecutor(
         private const val PITCH_MODEL = "lite-model_spice_1.tflite"
     }
 
-    fun execute(floatsInput:FloatArray) {
+    fun execute(floatsInput: FloatArray) {
 
         predictTime = System.currentTimeMillis()
         val inputSize = floatsInput.size // ~10 seconds of sound
-        val outputSize = ceil(inputSize / 512.0).toInt()
+        var outputSize = 0
+        when (inputSize) {
+            32000 -> outputSize = ceil(inputSize / 512.0).toInt()
+            else -> outputSize = (ceil(inputSize / 512.0) + 1).toInt()
+        }
         val inputValues = floatsInput//FloatArray(inputSize)
 
         val inputs = arrayOf<Any>(inputValues)
@@ -54,7 +60,11 @@ class PitchModelExecutor(
         outputs[0] = pitches
         outputs[1] = uncertainties
         //Log.e("INPUTS_SIZE", floatsInput.size.toString())
-        interpreter.runForMultipleInputsOutputs(inputs, outputs)
+        try {
+            interpreter.runForMultipleInputsOutputs(inputs, outputs)
+        } catch (e: Exception) {
+            Log.e("EXCEPTION", e.toString())
+        }
 
         predictTime = System.currentTimeMillis() - predictTime
 
