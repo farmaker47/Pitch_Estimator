@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Pitch Estimator</string>
+    <string name="app_name">Pitch Detector</string>
     <string name="action_settings">Settings</string>
     <!-- Strings used for fragments for navigation -->
     <string name="first_fragment_label">First Fragment</string>
@@ -8,4 +8,5 @@
     <string name="previous">Previous</string>
     <string name="hello_first_fragment">Hello first fragment</string>
     <string name="hello_second_fragment">Hello second fragment. Arg: %1$s</string>
+    <string name="song_lyrics">\'Baby shark doo doo doo doo doo doo, baby shark doo doo doo doo doo doo, baby shark.\'</string>
 </resources>
