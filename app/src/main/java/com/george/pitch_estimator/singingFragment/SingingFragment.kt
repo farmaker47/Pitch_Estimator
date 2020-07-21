@@ -46,9 +46,15 @@ class SingingFragment : Fragment() {
     //runnable to loop every 2 seconds with writing sound and infering
     private var updateWidgetRunnable: Runnable = Runnable {
         run {
-            //Update UI
-            viewModel.stopSinging()
+
+            // Start singing
             viewModel.startSinging()
+
+            // Stop after 2048 millis
+            val handler = Handler()
+            handler.postDelayed({
+                viewModel.stopSinging()
+            }, UPDATE_INTERVAL)
 
             // Re-run it after the update interval
             updateWidgetHandler.postDelayed(updateWidgetRunnable, UPDATE_INTERVAL)
@@ -81,8 +87,8 @@ class SingingFragment : Fragment() {
                 binding.buttonForSinging.text = "Start singing"
                 Toast.makeText(activity,"Singing has stopped",Toast.LENGTH_LONG).show()
             } else {
-                viewModel.startSinging()
-                updateWidgetHandler.postDelayed(updateWidgetRunnable, UPDATE_INTERVAL)
+                //viewModel.startSinging()
+                updateWidgetHandler.postDelayed(updateWidgetRunnable, 0)
 
                 binding.buttonForSinging.text = "Stop singing"
                 Toast.makeText(activity,"Singing has started",Toast.LENGTH_LONG).show()

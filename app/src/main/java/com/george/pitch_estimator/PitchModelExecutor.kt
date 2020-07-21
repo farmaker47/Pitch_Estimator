@@ -60,7 +60,7 @@ class PitchModelExecutor(
 
         Log.e("PITCHES", pitches.contentToString())
         Log.e("PITCHES_SIZE", pitches.size.toString())
-        Log.e("TIME", predictTime.toString())
+        Log.e("PITCHES_TIME", predictTime.toString())
 
     }
 
