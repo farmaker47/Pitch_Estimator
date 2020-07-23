@@ -12,6 +12,7 @@ import java.lang.Exception
 import java.nio.MappedByteBuffer
 import java.nio.channels.FileChannel
 import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.math.ceil
 import kotlin.math.floor
@@ -70,7 +71,22 @@ class PitchModelExecutor(
 
         Log.e("PITCHES", pitches.contentToString())
         Log.e("PITCHES_SIZE", pitches.size.toString())
+        Log.e("UNCERTAIN", uncertainties.contentToString())
+        Log.e("UNCERTAIN_SIZE", uncertainties.size.toString())
         Log.e("PITCHES_TIME", predictTime.toString())
+
+        // Calculate confidence over 90%
+        val arrayForConfidence = arrayListOf<Float>()
+        for (i in uncertainties.indices) {
+            if (1 - uncertainties[i] >= 0.9) {
+                arrayForConfidence.add(pitches[i])
+            }
+        }
+
+        Log.e("PITCHES_OVER_0.9", arrayForConfidence.size.toString())
+        for (k in 0 until arrayForConfidence.size){
+            Log.e("PITCHES_OVER_0.9", arrayForConfidence[k].toString())
+        }
 
     }
 

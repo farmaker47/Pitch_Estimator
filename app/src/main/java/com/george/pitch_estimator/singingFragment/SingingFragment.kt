@@ -90,6 +90,7 @@ class SingingFragment : Fragment() {
                         )
                         binding.textviewKaraoke.text = WordtoSpan
 
+                        // Stop everything after end of song
                         if(i==17){
                             singingStopped()
                         }
