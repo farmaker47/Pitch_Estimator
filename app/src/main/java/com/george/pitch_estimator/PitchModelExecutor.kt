@@ -1,8 +1,6 @@
 package com.george.pitch_estimator
 
 import android.content.Context
-import android.graphics.Bitmap
-import android.os.SystemClock
 import android.util.Log
 import org.tensorflow.lite.Interpreter
 import org.tensorflow.lite.gpu.GpuDelegate
@@ -11,11 +9,9 @@ import java.io.IOException
 import java.lang.Exception
 import java.nio.MappedByteBuffer
 import java.nio.channels.FileChannel
-import java.util.*
-import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.math.ceil
-import kotlin.math.floor
+import kotlin.math.pow
 
 class PitchModelExecutor(
     context: Context,
@@ -39,6 +35,10 @@ class PitchModelExecutor(
 
     companion object {
         private const val PITCH_MODEL = "lite-model_spice_1.tflite"
+        private const val PT_OFFSET = 25.58
+        private const val PT_SLOPE = 63.07
+        private const val FMIN = 10.0
+        private const val BINS_PER_OCTAVE = 12.0
     }
 
     fun execute(floatsInput: FloatArray) {
@@ -76,6 +76,7 @@ class PitchModelExecutor(
         Log.e("PITCHES_TIME", predictTime.toString())
 
         // Calculate confidence over 90%
+        // and store values inside an array list of floats
         val arrayForConfidence = arrayListOf<Float>()
         for (i in uncertainties.indices) {
             if (1 - uncertainties[i] >= 0.9) {
@@ -84,11 +85,26 @@ class PitchModelExecutor(
         }
 
         Log.e("PITCHES_OVER_0.9", arrayForConfidence.size.toString())
-        for (k in 0 until arrayForConfidence.size){
+        for (k in 0 until arrayForConfidence.size) {
             Log.e("PITCHES_OVER_0.9", arrayForConfidence[k].toString())
         }
 
+        // The pitch values returned by SPICE are in the range from 0 to 1.
+        // Let's convert them to absolute pitch values in Hz.
+        val hertzValues = DoubleArray(arrayForConfidence.size)
+        for (i in 0 until arrayForConfidence.size) {
+            hertzValues[i] = convertToAbsolutePitchValuesInHz(arrayForConfidence[i])
+        }
+
+        Log.e("HERTZ", hertzValues.contentToString())
+
     }
+
+    private fun convertToAbsolutePitchValuesInHz(value: Float): Double {
+        val cqt_bin = value * PT_SLOPE + PT_OFFSET
+        return FMIN * (2.0.pow(cqt_bin / BINS_PER_OCTAVE))
+    }
+
 
     @Throws(IOException::class)
     private fun loadModelFile(context: Context, modelFile: String): MappedByteBuffer {

@@ -14,7 +14,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.AnimationUtils
-import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
 import com.george.pitch_estimator.PitchModelExecutor
@@ -72,7 +71,7 @@ class SingingFragment : Fragment() {
 
     }
 
-    //runnable to loop every 2 seconds with writing sound and infering
+    //runnable to loop every 2 seconds with writing sound and inferring
     private var updateKaraokeRunnable: Runnable = Runnable {
         run {
 
@@ -81,14 +80,14 @@ class SingingFragment : Fragment() {
 
                     val handler = Handler()
                     handler.postDelayed({
-                        val WordtoSpan: Spannable = SpannableString(getString(R.string.song_lyrics))
-                        WordtoSpan.setSpan(
+                        val wordtoSpan: Spannable = SpannableString(getString(R.string.song_lyrics))
+                        wordtoSpan.setSpan(
                             ForegroundColorSpan(Color.BLUE),
-                            1,
+                            0,
                             5 * i,
                             Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
                         )
-                        binding.textviewKaraoke.text = WordtoSpan
+                        binding.textviewKaraoke.text = wordtoSpan
 
                         // Stop everything after end of song
                         if(i==17){
@@ -131,7 +130,7 @@ class SingingFragment : Fragment() {
                 updateKaraokeHandler.postDelayed(updateKaraokeRunnable, 0)
 
                 //binding.buttonForSinging.text = "Stop singing"
-                Toast.makeText(activity, "Singing has started", Toast.LENGTH_LONG).show()
+                //Toast.makeText(activity, "Singing has started", Toast.LENGTH_LONG).show()
 
 
             }
@@ -162,7 +161,7 @@ class SingingFragment : Fragment() {
         binding.buttonAnimated.clearAnimation()
 
         //binding.buttonForSinging.text = "Start singing"
-        Toast.makeText(activity, "Singing has stopped", Toast.LENGTH_LONG).show()
+        //Toast.makeText(activity, "Singing has stopped", Toast.LENGTH_LONG).show()
     }
 
     private fun animateSharkButton() {
