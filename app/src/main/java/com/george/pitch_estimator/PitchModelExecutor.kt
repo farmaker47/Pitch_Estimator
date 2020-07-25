@@ -41,7 +41,7 @@ class PitchModelExecutor(
         private const val BINS_PER_OCTAVE = 12.0
     }
 
-    fun execute(floatsInput: FloatArray) {
+    fun execute(floatsInput: FloatArray): DoubleArray {
 
         predictTime = System.currentTimeMillis()
         val inputSize = floatsInput.size // ~10 seconds of sound
@@ -69,11 +69,11 @@ class PitchModelExecutor(
 
         predictTime = System.currentTimeMillis() - predictTime
 
-        Log.e("PITCHES", pitches.contentToString())
-        Log.e("PITCHES_SIZE", pitches.size.toString())
-        Log.e("UNCERTAIN", uncertainties.contentToString())
-        Log.e("UNCERTAIN_SIZE", uncertainties.size.toString())
-        Log.e("PITCHES_TIME", predictTime.toString())
+        Log.i("PITCHES", pitches.contentToString())
+        Log.i("PITCHES_SIZE", pitches.size.toString())
+        Log.i("UNCERTAIN", uncertainties.contentToString())
+        Log.i("UNCERTAIN_SIZE", uncertainties.size.toString())
+        Log.i("PITCHES_TIME", predictTime.toString())
 
         // Calculate confidence over 90%
         // and store values inside an array list of floats
@@ -86,7 +86,7 @@ class PitchModelExecutor(
 
         Log.e("PITCHES_OVER_0.9", arrayForConfidence.size.toString())
         for (k in 0 until arrayForConfidence.size) {
-            Log.e("PITCHES_OVER_0.9", arrayForConfidence[k].toString())
+            Log.i("PITCHES_OVER_0.9", arrayForConfidence[k].toString())
         }
 
         // The pitch values returned by SPICE are in the range from 0 to 1.
@@ -96,7 +96,7 @@ class PitchModelExecutor(
             hertzValues[i] = convertToAbsolutePitchValuesInHz(arrayForConfidence[i])
         }
 
-        Log.e("HERTZ", hertzValues.contentToString())
+        return hertzValues
 
     }
 

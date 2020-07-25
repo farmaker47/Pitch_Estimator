@@ -3,6 +3,8 @@ package com.george.pitch_estimator.singingFragment
 import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.george.pitch_estimator.PitchModelExecutor
 import com.george.pitch_estimator.SingRecorder
@@ -21,6 +23,10 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
     lateinit var pitchModelExecutorObject: PitchModelExecutor
 
     var _singingRunning = false
+
+    private val _hertzValuesToDisplay = MutableLiveData<DoubleArray>()
+    val hertzValuesToDisplay: LiveData<DoubleArray>
+        get() = _hertzValuesToDisplay
 
     init {
     }
@@ -44,8 +50,8 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
         val stream = singRecorderObject.stopRecording()
         val streamForInference = singRecorderObject.stopRecordingForInference()
 
-        Log.e("VIEWMODEL_SIZE", streamForInference.size.toString())
-        Log.e("VIEWMODEL_VALUES", streamForInference.takeLast(100).toString())
+        Log.i("VIEWMODEL_SIZE", streamForInference.size.toString())
+        Log.i("VIEWMODEL_VALUES", streamForInference.takeLast(100).toString())
 
         _singingRunning = false
         viewModelScope.launch {
@@ -67,10 +73,11 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
             floatsForInference[index] = (value / 65536F)
         }
 
-        Log.e("FLOATS", floatsForInference.takeLast(100).toString())
+        Log.i("FLOATS", floatsForInference.takeLast(100).toString())
 
         // Inference
-        pitchModelExecutorObject.execute(floatsForInference)
+        _hertzValuesToDisplay.postValue(pitchModelExecutorObject.execute(floatsForInference))
+        Log.e("HERTZ", hertzValuesToDisplay.toString())
 
         // Load dummy sound file for practice and calibration/ comparison with Colab notebook
         //transcribe("/sdcard/Pitch Estimator/soloupis.wav")

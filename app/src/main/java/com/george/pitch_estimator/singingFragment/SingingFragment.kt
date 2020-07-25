@@ -90,9 +90,9 @@ class SingingFragment : Fragment() {
                         binding.textviewKaraoke.text = wordtoSpan
 
                         // Stop everything after end of song
-                        if(i==17){
+                        /*if(i==17){
                             singingStopped()
-                        }
+                        }*/
 
                     }, UPDATE_INTERVAL_KARAOKE * i)
 
@@ -111,6 +111,7 @@ class SingingFragment : Fragment() {
         binding = FragmentFirstBinding.inflate(inflater)
         binding.lifecycleOwner = this
 
+        binding.viewModelxml = viewModel
         getKoin().setProperty("koinUseGpu", false)
         singRecorder = get()
         pitchModelExecutor = get()
