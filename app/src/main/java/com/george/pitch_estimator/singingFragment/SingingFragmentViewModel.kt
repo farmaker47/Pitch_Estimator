@@ -77,7 +77,7 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
 
         // Inference
         _hertzValuesToDisplay.postValue(pitchModelExecutorObject.execute(floatsForInference))
-        Log.e("HERTZ", hertzValuesToDisplay.toString())
+        Log.i("HERTZ", hertzValuesToDisplay.toString())
 
         // Load dummy sound file for practice and calibration/ comparison with Colab notebook
         //transcribe("/sdcard/Pitch Estimator/soloupis.wav")

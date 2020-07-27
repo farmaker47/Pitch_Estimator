@@ -77,16 +77,19 @@ class PitchModelExecutor(
 
         // Calculate confidence over 90%
         // and store values inside an array list of floats
+        // if confidence is lower than 90% then add 0F
         val arrayForConfidence = arrayListOf<Float>()
         for (i in uncertainties.indices) {
             if (1 - uncertainties[i] >= 0.9) {
                 arrayForConfidence.add(pitches[i])
+            }else{
+                arrayForConfidence.add(0F)
             }
         }
 
         Log.e("PITCHES_OVER_0.9", arrayForConfidence.size.toString())
         for (k in 0 until arrayForConfidence.size) {
-            Log.i("PITCHES_OVER_0.9", arrayForConfidence[k].toString())
+            Log.e("PITCHES_OVER_0.9", arrayForConfidence[k].toString())
         }
 
         // The pitch values returned by SPICE are in the range from 0 to 1.
