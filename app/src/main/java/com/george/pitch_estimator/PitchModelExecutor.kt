@@ -6,12 +6,11 @@ import org.tensorflow.lite.Interpreter
 import org.tensorflow.lite.gpu.GpuDelegate
 import java.io.FileInputStream
 import java.io.IOException
-import java.lang.Exception
 import java.nio.MappedByteBuffer
 import java.nio.channels.FileChannel
-import kotlin.collections.HashMap
 import kotlin.math.ceil
 import kotlin.math.pow
+import kotlin.math.roundToInt
 
 class PitchModelExecutor(
     context: Context,
@@ -39,6 +38,7 @@ class PitchModelExecutor(
         private const val PT_SLOPE = 63.07
         private const val FMIN = 10.0
         private const val BINS_PER_OCTAVE = 12.0
+        private const val C0 = 16.351597831287414
     }
 
     fun execute(floatsInput: FloatArray): DoubleArray {
@@ -82,7 +82,7 @@ class PitchModelExecutor(
         for (i in uncertainties.indices) {
             if (1 - uncertainties[i] >= 0.9) {
                 arrayForConfidence.add(pitches[i])
-            }else{
+            } else {
                 arrayForConfidence.add(0F)
             }
         }
@@ -99,15 +99,44 @@ class PitchModelExecutor(
             hertzValues[i] = convertToAbsolutePitchValuesInHz(arrayForConfidence[i])
         }
 
+        Log.e("HERTZ_VALUES", hertzValues.contentToString())
+
+        // Calculate the offset during singing
+        // When a person sings freely, the melody may have an offset to the absolute pitch values that notes can represent.
+        // Hence, to convert predictions to notes, one needs to correct for this possible offset.
+        val arrayForOffset = arrayListOf<Float>()
+        for (i in hertzValues.indices) {
+            if (hertzValues[i] > 0 )
+                arrayForOffset.add(hzToOffset(hertzValues[i].toFloat()))
+        }
+
+        /*Log.e("OFFSETS", arrayForOffset.size.toString())
+        for (k in 0 until arrayForOffset.size) {
+            Log.e("OFFSETS", arrayForOffset[k].toString())
+        }*/
+
+        val idealOffset = arrayForOffset.average()
+
+        Log.e("OFFSETS_AVERAGE", idealOffset.toString())
+
         return hertzValues
 
     }
 
     private fun convertToAbsolutePitchValuesInHz(value: Float): Double {
-        val cqt_bin = value * PT_SLOPE + PT_OFFSET
-        return FMIN * (2.0.pow(cqt_bin / BINS_PER_OCTAVE))
+        if (value != 0F) {
+            val cqt_bin = value * PT_SLOPE + PT_OFFSET
+            return FMIN * (2.0.pow(cqt_bin / BINS_PER_OCTAVE))
+        } else {
+            return 0.toDouble()
+        }
     }
 
+    private fun hzToOffset(hertzFloat: Float): Float {
+        val h = (12 * kotlin.math.log2(hertzFloat / C0)).roundToInt().toFloat()
+        Log.e("ROUND", h.toString())
+        return (12 * kotlin.math.log2(hertzFloat / C0) - h).toFloat()
+    }
 
     @Throws(IOException::class)
     private fun loadModelFile(context: Context, modelFile: String): MappedByteBuffer {
