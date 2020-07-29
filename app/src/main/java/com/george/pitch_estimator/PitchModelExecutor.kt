@@ -8,9 +8,7 @@ import java.io.FileInputStream
 import java.io.IOException
 import java.nio.MappedByteBuffer
 import java.nio.channels.FileChannel
-import kotlin.math.ceil
-import kotlin.math.pow
-import kotlin.math.roundToInt
+import kotlin.math.*
 
 class PitchModelExecutor(
     context: Context,
@@ -21,6 +19,21 @@ class PitchModelExecutor(
 
     private val interpreter: Interpreter
     private var predictTime = 0L
+    val note_names = mapOf(
+        // ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+        0 to "C",
+        1 to "C#",
+        2 to "D",
+        3 to "D#",
+        4 to "E",
+        5 to "F",
+        6 to "F#",
+        7 to "G",
+        8 to "G#",
+        9 to "A",
+        10 to "A#",
+        11 to "B"
+    )
 
     init {
         if (useGPU) {
@@ -87,10 +100,10 @@ class PitchModelExecutor(
             }
         }
 
-        Log.e("PITCHES_OVER_0.9", arrayForConfidence.size.toString())
+        /*Log.i("PITCHES_OVER_0.9", arrayForConfidence.size.toString())
         for (k in 0 until arrayForConfidence.size) {
-            Log.e("PITCHES_OVER_0.9", arrayForConfidence[k].toString())
-        }
+            Log.i("PITCHES_OVER_0.9", arrayForConfidence[k].toString())
+        }*/
 
         // The pitch values returned by SPICE are in the range from 0 to 1.
         // Let's convert them to absolute pitch values in Hz.
@@ -99,14 +112,14 @@ class PitchModelExecutor(
             hertzValues[i] = convertToAbsolutePitchValuesInHz(arrayForConfidence[i])
         }
 
-        Log.e("HERTZ_VALUES", hertzValues.contentToString())
+        //Log.i("HERTZ_VALUES", hertzValues.contentToString())
 
         // Calculate the offset during singing
         // When a person sings freely, the melody may have an offset to the absolute pitch values that notes can represent.
         // Hence, to convert predictions to notes, one needs to correct for this possible offset.
         val arrayForOffset = arrayListOf<Float>()
         for (i in hertzValues.indices) {
-            if (hertzValues[i] > 0 )
+            if (hertzValues[i] > 0)
                 arrayForOffset.add(hzToOffset(hertzValues[i].toFloat()))
         }
 
@@ -117,10 +130,38 @@ class PitchModelExecutor(
 
         val idealOffset = arrayForOffset.average()
 
-        Log.e("OFFSETS_AVERAGE", idealOffset.toString())
+        //Log.i("OFFSETS_AVERAGE", idealOffset.toString())
+
+        var best_error = 10000000000000F//("+Inf").toFloat()
+        var best_notes_and_rests = arrayListOf<String>()
+        var best_predictions_per_note = 0
+
+        for (predictions_per_note in 20 until 65 step 1) {
+            for (prediction_start_offset in 0 until predictions_per_note) {
+
+                val (error, notes_and_rests) = get_quantization_and_error(
+                    hertzValues, predictions_per_note,
+                    prediction_start_offset, idealOffset.toFloat()
+                )
+
+                if (error < best_error) {
+                    best_error = error
+                    best_notes_and_rests = notes_and_rests
+                    best_predictions_per_note = predictions_per_note
+                }
+
+            }
+        }
+
+        Log.i("BEST_ERROR", best_error.toString())
+        for (i in 0 until best_notes_and_rests.size) {
+            Log.e("NOTES_AND_RESTS", best_notes_and_rests[i])
+        }
+
+
+
 
         return hertzValues
-
     }
 
     private fun convertToAbsolutePitchValuesInHz(value: Float): Double {
@@ -134,9 +175,101 @@ class PitchModelExecutor(
 
     private fun hzToOffset(hertzFloat: Float): Float {
         val h = (12 * kotlin.math.log2(hertzFloat / C0)).roundToInt().toFloat()
-        Log.e("ROUND", h.toString())
+        //Log.i("ROUND", h.toString())
         return (12 * kotlin.math.log2(hertzFloat / C0) - h).toFloat()
     }
+
+    private fun quantize_predictions(group: FloatArray, ideal_offset: Float): Pair<Double, String> {
+        // Group values are either 0, or a pitch in Hz.
+        val non_zero_values = arrayListOf<Float>()
+        for (i in group.indices) {
+            if (group[i] > 0) {
+                non_zero_values.add(group[i])
+            }
+        }
+        //print(non_zero_values)
+        val zero_values_count = group.size - non_zero_values.size
+
+        // Create a rest if 80% is silent, otherwise create a note.
+        if (zero_values_count > 0.8 * group.size) {
+            // Interpret as a rest. Count each dropped note as an error, weighted a bit
+            // worse than a badly sung note (which would 'cost' 0.5).
+            return Pair(0.51 * non_zero_values.size, "Rest")
+        } else {
+            // Interpret as note, estimating as mean of non-rest predictions.
+            val non_zero_average_values = arrayListOf<Float>()
+            for (i in 0 until non_zero_values.size) {
+                non_zero_average_values.add((12 * kotlin.math.log2(non_zero_values[i] / C0) - ideal_offset).toFloat())
+            }
+
+            val h = non_zero_average_values.average().roundToInt()
+            val octave = h / 12
+            //Log.i("OCTAVE",octave.toString())
+            val n = h.rem(12)
+            //Log.i("NOTE",n.toString())
+            val note = note_names[n] + octave.toString()
+            // Quantization error is the total difference from the quantized note.
+            val non_zero_error_values = arrayListOf<Float>()
+            for (i in 0 until non_zero_values.size) {
+                non_zero_error_values.add(
+                    abs(12 * log2(non_zero_values[i] / C0) - ideal_offset - h)
+                        .toFloat()
+                )
+            }
+            val error = non_zero_error_values.sum()
+            return Pair(error.toDouble(), note)
+        }
+    }
+
+    private fun get_quantization_and_error(
+        pitch_outputs_and_rests: DoubleArray, predictions_per_eighth: Int,
+        prediction_start_offset: Int, ideal_offset: Float
+    ): Pair<Float, ArrayList<String>> {
+
+        val pitch_outputs_and_rests_with_offset = arrayListOf<Float>()
+        for (i in 0 until prediction_start_offset) {
+            pitch_outputs_and_rests_with_offset.add(0F)
+        }
+
+        for (i in pitch_outputs_and_rests.indices) {
+            pitch_outputs_and_rests_with_offset.add(pitch_outputs_and_rests[i].toFloat())
+        }
+
+        //Log.i("SIZE", pitch_outputs_and_rests_with_offset.size.toString())
+
+        val groups = arrayListOf<FloatArray>()
+        for (i in 0 until pitch_outputs_and_rests_with_offset.size step predictions_per_eighth) {
+            val firstArrayList = arrayListOf<Float>()
+            try {
+                for (k in i until i + predictions_per_eighth) {
+                    firstArrayList.add(pitch_outputs_and_rests_with_offset[k])
+                }
+
+            } catch (e: Exception) {
+                //Log.e("EXCEPTION", e.toString())
+            }
+
+
+            val secondArray = FloatArray(firstArrayList.size)
+            for (l in 0 until firstArrayList.size) {
+                secondArray[l] = firstArrayList[l]
+            }
+
+            groups.add(secondArray)
+        }
+
+        //# Collect the predictions for each note (or rest).
+        var quantization_error = 0.0
+        val notes_and_rests = arrayListOf<String>()
+        for (m in 0 until groups.size) {
+            val (error, note) = quantize_predictions(groups[m], ideal_offset)
+            quantization_error += error
+            notes_and_rests.add(note)
+        }
+
+        return Pair(quantization_error.toFloat(), notes_and_rests)
+    }
+
 
     @Throws(IOException::class)
     private fun loadModelFile(context: Context, modelFile: String): MappedByteBuffer {
