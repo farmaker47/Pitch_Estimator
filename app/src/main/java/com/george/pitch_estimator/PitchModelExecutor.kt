@@ -20,6 +20,7 @@ class PitchModelExecutor(
     private val interpreter: Interpreter
     private var predictTime = 0L
     val note_names = mapOf(
+        // musical notes
         // ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
         0 to "C",
         1 to "C#",
@@ -54,7 +55,7 @@ class PitchModelExecutor(
         private const val C0 = 16.351597831287414
     }
 
-    fun execute(floatsInput: FloatArray): DoubleArray {
+    fun execute(floatsInput: FloatArray): ArrayList<String> {
 
         predictTime = System.currentTimeMillis()
         val inputSize = floatsInput.size // ~10 seconds of sound
@@ -80,13 +81,10 @@ class PitchModelExecutor(
             Log.e("EXCEPTION", e.toString())
         }
 
-        predictTime = System.currentTimeMillis() - predictTime
-
         Log.i("PITCHES", pitches.contentToString())
         Log.i("PITCHES_SIZE", pitches.size.toString())
         Log.i("UNCERTAIN", uncertainties.contentToString())
         Log.i("UNCERTAIN_SIZE", uncertainties.size.toString())
-        Log.i("PITCHES_TIME", predictTime.toString())
 
         // Calculate confidence over 90%
         // and store values inside an array list of floats
@@ -132,36 +130,50 @@ class PitchModelExecutor(
 
         //Log.i("OFFSETS_AVERAGE", idealOffset.toString())
 
-        var best_error = 10000000000000F//("+Inf").toFloat()
-        var best_notes_and_rests = arrayListOf<String>()
-        var best_predictions_per_note = 0
+        var bestError = 10000000000000F//("+Inf").toFloat()
+        var bestNotesAndRests = arrayListOf<String>()
+        var bestPredictionsPerNote = 0
 
         for (predictions_per_note in 20 until 65 step 1) {
             for (prediction_start_offset in 0 until predictions_per_note) {
 
-                val (error, notes_and_rests) = get_quantization_and_error(
+                val (error, notes_and_rests) = getQuantizationAndError(
                     hertzValues, predictions_per_note,
                     prediction_start_offset, idealOffset.toFloat()
                 )
 
-                if (error < best_error) {
-                    best_error = error
-                    best_notes_and_rests = notes_and_rests
-                    best_predictions_per_note = predictions_per_note
+                if (error < bestError) {
+                    bestError = error
+                    bestNotesAndRests = notes_and_rests
+                    bestPredictionsPerNote = predictions_per_note
                 }
 
             }
         }
 
-        Log.i("BEST_ERROR", best_error.toString())
-        for (i in 0 until best_notes_and_rests.size) {
-            Log.e("NOTES_AND_RESTS", best_notes_and_rests[i])
+        Log.e("BEST_ERROR", bestError.toString())
+        for (i in 0 until bestNotesAndRests.size) {
+            Log.e("NOTES_AND_RESTS", bestNotesAndRests[i])
         }
 
+        // Remove rest at beginning and end of arrayList
+        var noRestInBeginningAndEnd = arrayListOf<String>()
+        for (i in 0 until bestNotesAndRests.size) {
+            if (i == 0 && bestNotesAndRests[0] != "Rest") {
+                noRestInBeginningAndEnd.add(bestNotesAndRests[i])
+            } else if (i > 0 && i < bestNotesAndRests.size - 1) {
+                noRestInBeginningAndEnd.add(bestNotesAndRests[i])
+            } else if (i == bestNotesAndRests.size - 1 && bestNotesAndRests[bestNotesAndRests.size - 1] != "Rest"
+            ) {
+                noRestInBeginningAndEnd.add(bestNotesAndRests[i])
+                Log.e("3", "3")
+            }
+        }
 
+        predictTime = System.currentTimeMillis() - predictTime
+        Log.e("PITCHES_TIME", predictTime.toString())
 
-
-        return hertzValues
+        return noRestInBeginningAndEnd//hertzValues DoubleArray
     }
 
     private fun convertToAbsolutePitchValuesInHz(value: Float): Double {
@@ -217,32 +229,33 @@ class PitchModelExecutor(
                 )
             }
             val error = non_zero_error_values.sum()
+
             return Pair(error.toDouble(), note)
         }
     }
 
-    private fun get_quantization_and_error(
+    private fun getQuantizationAndError(
         pitch_outputs_and_rests: DoubleArray, predictions_per_eighth: Int,
         prediction_start_offset: Int, ideal_offset: Float
     ): Pair<Float, ArrayList<String>> {
 
-        val pitch_outputs_and_rests_with_offset = arrayListOf<Float>()
+        val pitchOutputsAndRestsWithOffset = arrayListOf<Float>()
         for (i in 0 until prediction_start_offset) {
-            pitch_outputs_and_rests_with_offset.add(0F)
+            pitchOutputsAndRestsWithOffset.add(0F)
         }
 
         for (i in pitch_outputs_and_rests.indices) {
-            pitch_outputs_and_rests_with_offset.add(pitch_outputs_and_rests[i].toFloat())
+            pitchOutputsAndRestsWithOffset.add(pitch_outputs_and_rests[i].toFloat())
         }
 
         //Log.i("SIZE", pitch_outputs_and_rests_with_offset.size.toString())
 
         val groups = arrayListOf<FloatArray>()
-        for (i in 0 until pitch_outputs_and_rests_with_offset.size step predictions_per_eighth) {
+        for (i in 0 until pitchOutputsAndRestsWithOffset.size step predictions_per_eighth) {
             val firstArrayList = arrayListOf<Float>()
             try {
                 for (k in i until i + predictions_per_eighth) {
-                    firstArrayList.add(pitch_outputs_and_rests_with_offset[k])
+                    firstArrayList.add(pitchOutputsAndRestsWithOffset[k])
                 }
 
             } catch (e: Exception) {
@@ -259,15 +272,15 @@ class PitchModelExecutor(
         }
 
         //# Collect the predictions for each note (or rest).
-        var quantization_error = 0.0
-        val notes_and_rests = arrayListOf<String>()
+        var quantizationError = 0.0
+        val notesAndRests = arrayListOf<String>()
         for (m in 0 until groups.size) {
             val (error, note) = quantize_predictions(groups[m], ideal_offset)
-            quantization_error += error
-            notes_and_rests.add(note)
+            quantizationError += error
+            notesAndRests.add(note)
         }
 
-        return Pair(quantization_error.toFloat(), notes_and_rests)
+        return Pair(quantizationError.toFloat(), notesAndRests)
     }
 
 

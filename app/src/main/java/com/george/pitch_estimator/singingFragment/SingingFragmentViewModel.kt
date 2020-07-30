@@ -28,6 +28,10 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
     val hertzValuesToDisplay: LiveData<DoubleArray>
         get() = _hertzValuesToDisplay
 
+    private val _noteValuesToDisplay = MutableLiveData<ArrayList<String>>()
+    val noteValuesToDisplay: LiveData<ArrayList<String>>
+        get() = _noteValuesToDisplay
+
     init {
     }
 
@@ -76,7 +80,8 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
         Log.i("FLOATS", floatsForInference.takeLast(100).toString())
 
         // Inference
-        _hertzValuesToDisplay.postValue(pitchModelExecutorObject.execute(floatsForInference))
+        //_hertzValuesToDisplay.postValue(pitchModelExecutorObject.execute(floatsForInference))
+        _noteValuesToDisplay.postValue(pitchModelExecutorObject.execute(floatsForInference))
         Log.i("HERTZ", hertzValuesToDisplay.toString())
 
         // Load dummy sound file for practice and calibration/ comparison with Colab notebook

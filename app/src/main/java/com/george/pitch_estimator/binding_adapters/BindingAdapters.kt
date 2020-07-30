@@ -17,3 +17,10 @@ fun bindDoubleArrayHertzToValues(textView: TextView, value: DoubleArray?) {
     }
 
 }
+
+@BindingAdapter("noteArrayListToString")
+fun bindDoubleArrayHertzToValues(textView: TextView, value: ArrayList<String>?) {
+
+    textView.text = value.toString()
+
+}
