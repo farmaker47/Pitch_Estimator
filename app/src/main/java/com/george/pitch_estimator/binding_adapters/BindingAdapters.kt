@@ -1,5 +1,6 @@
 package com.george.pitch_estimator.binding_adapters
 
+import android.webkit.WebView
 import android.widget.TextView
 import androidx.databinding.BindingAdapter
 import kotlin.math.roundToInt
@@ -23,4 +24,10 @@ fun bindDoubleArrayHertzToValues(textView: TextView, value: ArrayList<String>?) 
 
     textView.text = value.toString()
 
+}
+
+@BindingAdapter("htmlToScreen")
+fun bindTextViewHtml(webView: WebView, htmlValue: String) {
+    webView.settings.javaScriptEnabled = true;
+    webView.loadDataWithBaseURL("fake://not/needed", htmlValue, "text/html", "UTF-8", "");
 }

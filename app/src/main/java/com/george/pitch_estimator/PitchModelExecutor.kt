@@ -151,13 +151,17 @@ class PitchModelExecutor(
             }
         }
 
-        Log.e("BEST_ERROR", bestError.toString())
+        // BPM calculation
+        val bpm = 60 * 60 / bestPredictionsPerNote
+        Log.i("BPM", bpm.toString())
+
+        Log.i("BEST_ERROR", bestError.toString())
         for (i in 0 until bestNotesAndRests.size) {
             Log.e("NOTES_AND_RESTS", bestNotesAndRests[i])
         }
 
         // Remove rest at beginning and end of arrayList
-        var noRestInBeginningAndEnd = arrayListOf<String>()
+        val noRestInBeginningAndEnd = arrayListOf<String>()
         for (i in 0 until bestNotesAndRests.size) {
             if (i == 0 && bestNotesAndRests[0] != "Rest") {
                 noRestInBeginningAndEnd.add(bestNotesAndRests[i])
@@ -166,7 +170,7 @@ class PitchModelExecutor(
             } else if (i == bestNotesAndRests.size - 1 && bestNotesAndRests[bestNotesAndRests.size - 1] != "Rest"
             ) {
                 noRestInBeginningAndEnd.add(bestNotesAndRests[i])
-                Log.e("3", "3")
+                //Log.i("3", "3")
             }
         }
 
@@ -186,9 +190,9 @@ class PitchModelExecutor(
     }
 
     private fun hzToOffset(hertzFloat: Float): Float {
-        val h = (12 * kotlin.math.log2(hertzFloat / C0)).roundToInt().toFloat()
+        val h = (12 * log2(hertzFloat / C0)).roundToInt().toFloat()
         //Log.i("ROUND", h.toString())
-        return (12 * kotlin.math.log2(hertzFloat / C0) - h).toFloat()
+        return (12 * log2(hertzFloat / C0) - h).toFloat()
     }
 
     private fun quantize_predictions(group: FloatArray, ideal_offset: Float): Pair<Double, String> {
@@ -211,7 +215,7 @@ class PitchModelExecutor(
             // Interpret as note, estimating as mean of non-rest predictions.
             val non_zero_average_values = arrayListOf<Float>()
             for (i in 0 until non_zero_values.size) {
-                non_zero_average_values.add((12 * kotlin.math.log2(non_zero_values[i] / C0) - ideal_offset).toFloat())
+                non_zero_average_values.add((12 * log2(non_zero_values[i] / C0) - ideal_offset).toFloat())
             }
 
             val h = non_zero_average_values.average().roundToInt()

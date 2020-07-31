@@ -72,4 +72,7 @@ dependencies {
     // for extra operations
     implementation 'org.tensorflow:tensorflow-lite-select-tf-ops:0.0.0-nightly'
 
+    // Html TextView with Images
+    //implementation 'org.sufficientlysecure:html-textview:3.9'
+
 }

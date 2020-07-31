@@ -5,6 +5,7 @@
     tools:context=".singingFragment.SingingFragment">
 
     <data>
+
         <variable
             name="viewModelxml"
             type="com.george.pitch_estimator.singingFragment.SingingFragmentViewModel" />
@@ -20,6 +21,7 @@
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:layout_marginBottom="24dp"
             android:background="#00E5FF">
 
             <TextView
@@ -47,10 +49,10 @@
                 android:id="@+id/buttonAnimated"
                 android:layout_width="130dp"
                 android:layout_height="140dp"
+                android:layout_marginTop="20dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:foreground="@drawable/ic_shark"
                 android:text="@string/next"
-                android:layout_marginTop="20dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="@id/buttonForSinging" />
@@ -65,18 +67,33 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/textviewKaraoke" />
 
+            <WebView
+                android:id="@+id/allNewsBlockTextView"
+                android:layout_width="400dp"
+                android:layout_height="250dp"
+                android:layout_marginStart="@dimen/webViewMargin"
+                android:layout_marginEnd="@dimen/webViewMargin"
+                android:layout_marginBottom="@dimen/webViewMargin"
+                android:textColor="#000"
+                android:textIsSelectable="true"
+                app:htmlToScreen="@{viewModelxml.inputTextFromAssets}"
+                android:textSize="18sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/textviewHertz" />
+
             <TextView
                 android:id="@+id/textviewHertz"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:padding="32dp"
-                tools:text="@string/song_lyrics"
                 android:textColor="#fff"
                 android:textSize="36sp"
-                app:noteArrayListToString="@{viewModelxml.noteValuesToDisplay}"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/buttonForSinging" />
+                app:layout_constraintTop_toBottomOf="@id/buttonForSinging"
+                app:noteArrayListToString="@{viewModelxml.noteValuesToDisplay}"
+                tools:text="@string/song_lyrics" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 

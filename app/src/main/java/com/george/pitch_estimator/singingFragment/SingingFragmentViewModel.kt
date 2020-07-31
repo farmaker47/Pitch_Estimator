@@ -11,10 +11,7 @@ import com.george.pitch_estimator.SingRecorder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.ByteArrayOutputStream
-import java.io.FileNotFoundException
-import java.io.IOException
-import java.io.RandomAccessFile
+import java.io.*
 import kotlin.experimental.and
 
 class SingingFragmentViewModel(application: Application) : AndroidViewModel(application) {
@@ -32,7 +29,14 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
     val noteValuesToDisplay: LiveData<ArrayList<String>>
         get() = _noteValuesToDisplay
 
+    private val _inputTextFromAssets = MutableLiveData<String>()
+
+    // The external LiveData for the SelectedNews
+    val inputTextFromAssets: LiveData<String>
+        get() = _inputTextFromAssets
+
     init {
+        readTextFromAssets(application)
     }
 
     fun setSingRecorderModule(singRecorder: SingRecorder, pitchModelExecutor: PitchModelExecutor) {
@@ -74,7 +78,7 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
 
         val floatsForInference = FloatArray(arrayListShorts.size)
         for ((index, value) in arrayListShorts.withIndex()) {
-            floatsForInference[index] = (value / 65536F)
+            floatsForInference[index] = (value / 32768F)
         }
 
         Log.i("FLOATS", floatsForInference.takeLast(100).toString())
@@ -86,6 +90,17 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
 
         // Load dummy sound file for practice and calibration/ comparison with Colab notebook
         //transcribe("/sdcard/Pitch Estimator/soloupis.wav")
+    }
+
+    private fun readTextFromAssets(application: Application) {
+        try {
+            val inputStream: InputStream = application.assets.open("note_keys.txt")
+            val inputString = inputStream.bufferedReader().use { it.readText() }
+            _inputTextFromAssets.value = inputString
+            Log.e("HTML", inputTextFromAssets.value)
+        } catch (e: Exception) {
+            Log.e("EXEPTION_READ", e.toString())
+        }
     }
 
     /*private fun transcribe(audioFile: String) {
