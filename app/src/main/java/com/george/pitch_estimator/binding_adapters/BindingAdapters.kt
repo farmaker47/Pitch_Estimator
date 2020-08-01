@@ -29,5 +29,6 @@ fun bindDoubleArrayHertzToValues(textView: TextView, value: ArrayList<String>?) 
 @BindingAdapter("htmlToScreen")
 fun bindTextViewHtml(webView: WebView, htmlValue: String) {
     webView.settings.javaScriptEnabled = true;
-    webView.loadDataWithBaseURL("fake://not/needed", htmlValue, "text/html", "UTF-8", "");
+    webView.loadDataWithBaseURL("fake://not/needed", htmlValue, "text/html", "UTF-8", "")
+    //webView.loadUrl(htmlValue)
 }

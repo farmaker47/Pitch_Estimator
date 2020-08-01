@@ -74,5 +74,4 @@ dependencies {
 
     // Html TextView with Images
     //implementation 'org.sufficientlysecure:html-textview:3.9'
-
 }

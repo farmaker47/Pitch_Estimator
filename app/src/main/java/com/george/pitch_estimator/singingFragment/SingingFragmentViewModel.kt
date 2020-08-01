@@ -2,6 +2,7 @@ package com.george.pitch_estimator.singingFragment
 
 import android.app.Application
 import android.util.Log
+import android.util.Xml
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -11,13 +12,20 @@ import com.george.pitch_estimator.SingRecorder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.xmlpull.v1.XmlPullParser
+import org.xmlpull.v1.XmlPullParserException
 import java.io.*
-import kotlin.experimental.and
+import javax.xml.transform.*
+import javax.xml.transform.stream.StreamResult
+import javax.xml.transform.stream.StreamSource
+import kotlin.Result
 
 class SingingFragmentViewModel(application: Application) : AndroidViewModel(application) {
 
     lateinit var singRecorderObject: SingRecorder
     lateinit var pitchModelExecutorObject: PitchModelExecutor
+
+    data class Entry(val title: String?, val summary: String?, val link: String?)
 
     var _singingRunning = false
 
@@ -96,10 +104,141 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
         try {
             val inputStream: InputStream = application.assets.open("note_keys.txt")
             val inputString = inputStream.bufferedReader().use { it.readText() }
+
+            // parse xml
+            //val entries = parse(inputStream)
+            /*val output = StringBuilder().apply {
+                append("<h3>${"Some"}</h3>")
+                append("<em>${"Some"} ")
+                append("${"Some"}</em>")
+                // StackOverflowXmlParser returns a List (called "entries") of Entry objects.
+                // Each Entry object represents a single post in the XML feed.
+                // This section processes the entries list to combine each entry with HTML markup.
+                // Each entry is displayed in the UI as a link that optionally includes
+                // a text summary.
+                entries.forEach { entry ->
+                    append("<p><a href='")
+                }
+            }.toString()*/
+
             _inputTextFromAssets.value = inputString
-            Log.e("HTML", inputTextFromAssets.value)
+            Log.i("HTML", inputTextFromAssets.value)
         } catch (e: Exception) {
             Log.e("EXEPTION_READ", e.toString())
+        }
+    }
+
+    @Throws(XmlPullParserException::class, IOException::class)
+    fun parse(inputStream: InputStream): List<*> {
+        inputStream.use { inputStream ->
+            val parser: XmlPullParser = Xml.newPullParser()
+            parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
+            parser.setInput(inputStream, null)
+            parser.nextTag()
+            return readFeed(parser)
+        }
+    }
+
+    private val ns: String? = null
+
+    @Throws(XmlPullParserException::class, IOException::class)
+    private fun readFeed(parser: XmlPullParser): List<Entry> {
+        val entries = mutableListOf<Entry>()
+
+        parser.require(XmlPullParser.START_TAG, ns, "feed")
+        while (parser.next() != XmlPullParser.END_TAG) {
+            if (parser.eventType != XmlPullParser.START_TAG) {
+                continue
+            }
+            // Starts by looking for the entry tag
+            if (parser.name == "entry") {
+                entries.add(readEntry(parser))
+            } else {
+                skip(parser)
+            }
+        }
+        return entries
+    }
+
+    // Parses the contents of an entry. If it encounters a title, summary, or link tag, hands them off
+    // to their respective "read" methods for processing. Otherwise, skips the tag.
+    @Throws(XmlPullParserException::class, IOException::class)
+    private fun readEntry(parser: XmlPullParser): Entry {
+        parser.require(XmlPullParser.START_TAG, ns, "entry")
+        var title: String? = null
+        var summary: String? = null
+        var link: String? = null
+        while (parser.next() != XmlPullParser.END_TAG) {
+            if (parser.eventType != XmlPullParser.START_TAG) {
+                continue
+            }
+            when (parser.name) {
+                "title" -> title = readTitle(parser)
+                "summary" -> summary = readSummary(parser)
+                "link" -> link = readLink(parser)
+                else -> skip(parser)
+            }
+        }
+        return Entry(title, summary, link)
+    }
+
+    // Processes title tags in the feed.
+    @Throws(IOException::class, XmlPullParserException::class)
+    private fun readTitle(parser: XmlPullParser): String {
+        parser.require(XmlPullParser.START_TAG, ns, "title")
+        val title = readText(parser)
+        parser.require(XmlPullParser.END_TAG, ns, "title")
+        return title
+    }
+
+    // Processes link tags in the feed.
+    @Throws(IOException::class, XmlPullParserException::class)
+    private fun readLink(parser: XmlPullParser): String {
+        var link = ""
+        parser.require(XmlPullParser.START_TAG, ns, "link")
+        val tag = parser.name
+        val relType = parser.getAttributeValue(null, "rel")
+        if (tag == "link") {
+            if (relType == "alternate") {
+                link = parser.getAttributeValue(null, "href")
+                parser.nextTag()
+            }
+        }
+        parser.require(XmlPullParser.END_TAG, ns, "link")
+        return link
+    }
+
+    // Processes summary tags in the feed.
+    @Throws(IOException::class, XmlPullParserException::class)
+    private fun readSummary(parser: XmlPullParser): String {
+        parser.require(XmlPullParser.START_TAG, ns, "summary")
+        val summary = readText(parser)
+        parser.require(XmlPullParser.END_TAG, ns, "summary")
+        return summary
+    }
+
+    // For the tags title and summary, extracts their text values.
+    @Throws(IOException::class, XmlPullParserException::class)
+    private fun readText(parser: XmlPullParser): String {
+        var result = ""
+        if (parser.next() == XmlPullParser.TEXT) {
+            result = parser.text
+            parser.nextTag()
+        }
+        return result
+    }
+
+    @Throws(XmlPullParserException::class, IOException::class)
+    private fun skip(parser: XmlPullParser) {
+        if (parser.eventType != XmlPullParser.START_TAG) {
+            throw IllegalStateException()
+        }
+        var depth = 1
+        while (depth != 0) {
+            when (parser.next()) {
+                XmlPullParser.END_TAG -> depth--
+                XmlPullParser.START_TAG -> depth++
+            }
         }
     }
 
