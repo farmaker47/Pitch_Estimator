@@ -69,7 +69,7 @@
             <WebView
                 android:id="@+id/allNewsBlockTextView"
                 android:layout_width="400dp"
-                android:layout_height="250dp"
+                android:layout_height="300dp"
                 android:layout_marginStart="@dimen/webViewMargin"
                 android:layout_marginEnd="@dimen/webViewMargin"
                 android:layout_marginBottom="@dimen/webViewMargin"

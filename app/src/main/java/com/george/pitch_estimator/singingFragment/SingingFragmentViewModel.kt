@@ -124,7 +124,7 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
             _inputTextFromAssets.value = inputString
             Log.i("HTML", inputTextFromAssets.value)
         } catch (e: Exception) {
-            Log.e("EXEPTION_READ", e.toString())
+            Log.e("EXCEPTION_READ", e.toString())
         }
     }
 
