@@ -1,0 +1,13 @@
+  var pos2 = -280;
+  var id2 = setInterval(frame2, 100);
+ 
+  function frame2() {
+      pos2 = pos2 - 10;
+      elem2.style.left = pos2;
+      if(pos2 == -600){
+        clearInterval(id2);
+        var id3 = setInterval(frame3, 30);
+      }
+    }
+    
+  var pos3 = 

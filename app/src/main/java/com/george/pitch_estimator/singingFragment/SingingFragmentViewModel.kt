@@ -15,15 +15,17 @@ import kotlinx.coroutines.withContext
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserException
 import java.io.*
-import javax.xml.transform.*
-import javax.xml.transform.stream.StreamResult
-import javax.xml.transform.stream.StreamSource
-import kotlin.Result
 
 class SingingFragmentViewModel(application: Application) : AndroidViewModel(application) {
 
     lateinit var singRecorderObject: SingRecorder
     lateinit var pitchModelExecutorObject: PitchModelExecutor
+    lateinit var inputStringPentagram: String
+    lateinit var inputStringNote: String
+    lateinit var inputStringFunction1: String
+    lateinit var inputStringFunction2: String
+    lateinit var inputStringFunction3: String
+    var positionOfNote: Int = 0
 
     data class Entry(val title: String?, val summary: String?, val link: String?)
 
@@ -43,8 +45,15 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
     val inputTextFromAssets: LiveData<String>
         get() = _inputTextFromAssets
 
+    private val _inferenceDone = MutableLiveData<Boolean>()
+    val inferenceDone: LiveData<Boolean>
+        get() = _inferenceDone
+
     init {
-        readTextFromAssets(application)
+        readTextFromAssets(application, -280)
+
+        // Initialize arraylist
+        _noteValuesToDisplay.value = arrayListOf()
     }
 
     fun setSingRecorderModule(singRecorder: SingRecorder, pitchModelExecutor: PitchModelExecutor) {
@@ -93,17 +102,58 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
 
         // Inference
         //_hertzValuesToDisplay.postValue(pitchModelExecutorObject.execute(floatsForInference))
+        _inferenceDone.postValue(false)
         _noteValuesToDisplay.postValue(pitchModelExecutorObject.execute(floatsForInference))
         Log.i("HERTZ", hertzValuesToDisplay.toString())
+        _inferenceDone.postValue(true)
+
+        // After inference generate notes
+        try {
+            for (i in 0 until _noteValuesToDisplay.value!!.size) {
+
+                when (_noteValuesToDisplay.value!![i]) {
+                    "A2" -> _inputTextFromAssets.postValue(
+                        inputStringPentagram + inputStringNote + inputStringFunction1 + "elem2.style.top = " +
+                                (positionOfNote - 50) + ";" + inputStringFunction2 + (positionOfNote - 50 + 35).toString() + ";" + inputStringFunction3
+                    )
+                    "C3" -> _inputTextFromAssets.postValue(
+                        inputStringPentagram + inputStringNote + inputStringFunction1 + "elem2.style.top = " +
+                                (positionOfNote - 100) + ";" + inputStringFunction2 + (positionOfNote - 100 + 35).toString() + ";" + inputStringFunction3
+                    )
+
+                }
+                /*if (_noteValuesToDisplay.value!![i] == "A2") {
+                    _inputTextFromAssets.postValue(
+                        inputStringPentagram + inputStringNote + inputStringFunction1 + "elem2.style.top = " +
+                                (positionOfNote - 50) + ";" + inputStringFunction2 + (positionOfNote - 50 + 35).toString() + ";" + inputStringFunction3
+                    )
+                }*/
+            }
+        } catch (e: Exception) {
+            Log.e("EXCEPTION", e.toString())
+        }
+
 
         // Load dummy sound file for practice and calibration/ comparison with Colab notebook
         //transcribe("/sdcard/Pitch Estimator/soloupis.wav")
     }
 
-    private fun readTextFromAssets(application: Application) {
+    private fun readTextFromAssets(application: Application, position: Int) {
         try {
-            val inputStream: InputStream = application.assets.open("note_keys.txt")
-            val inputString = inputStream.bufferedReader().use { it.readText() }
+            val inputStreamPentagram: InputStream = application.assets.open("pentagram.txt")
+            inputStringPentagram = inputStreamPentagram.bufferedReader().use { it.readText() }
+
+            val inputStreamNote: InputStream = application.assets.open("note.txt")
+            inputStringNote = inputStreamNote.bufferedReader().use { it.readText() }
+
+            val inputStreamFunction1: InputStream = application.assets.open("function1.txt")
+            inputStringFunction1 = inputStreamFunction1.bufferedReader().use { it.readText() }
+
+            val inputStreamFunction2: InputStream = application.assets.open("function2.txt")
+            inputStringFunction2 = inputStreamFunction2.bufferedReader().use { it.readText() }
+
+            val inputStreamFunction3: InputStream = application.assets.open("function3.txt")
+            inputStringFunction3 = inputStreamFunction3.bufferedReader().use { it.readText() }
 
             // parse xml
             //val entries = parse(inputStream)
@@ -120,8 +170,11 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
                     append("<p><a href='")
                 }
             }.toString()*/
+            positionOfNote = position
 
-            _inputTextFromAssets.value = inputString
+            _inputTextFromAssets.value =
+                inputStringPentagram /*+ inputStringNote + inputStringFunction1 + "elem2.style.top = " +
+                        position + ";" + inputStringFunction2 + (position + 35).toString() + ";" + inputStringFunction3*/
             Log.i("HTML", inputTextFromAssets.value)
         } catch (e: Exception) {
             Log.e("EXCEPTION_READ", e.toString())

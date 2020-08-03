@@ -1,0 +1,15 @@
+function frame3() {
+    pos3 = pos3 + 10;
+    elem2.style.top = pos3;
+    if(pos3 == 20){
+        elem2.remove()
+        clearInterval(id3);
+      }
+  }
+
+
+}
+</script>
+
+
+</body>

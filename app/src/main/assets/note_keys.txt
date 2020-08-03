@@ -81,7 +81,7 @@ function myMove() {
   var elem2 = document.getElementById("notes-dummy");
   var elem4 = document.getElementById("container");
   elem2.scrollLeft = 0;
-  elem2.style.top = -275;
+  elem2.style.top = -375;
   elem4.style.top = -30;
   var pos2 = -300;
   var id2 = setInterval(frame2, 100);
@@ -95,7 +95,7 @@ function myMove() {
       }
     }
 
-  var pos3 = -240;
+  var pos3 = -340;
   function frame3() {
     pos3 = pos3 + 10;
     elem2.style.top = pos3;

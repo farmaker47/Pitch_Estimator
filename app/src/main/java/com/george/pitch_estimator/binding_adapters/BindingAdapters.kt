@@ -38,7 +38,7 @@ fun bindTextViewHtml(webView: WebView, htmlValue: String) {
             val handler = Handler()
             handler.postDelayed(
                 { webView.loadUrl("javascript:(function(){l=document.getElementById('music_sheet');e=document.createEvent('HTMLEvents');e.initEvent('click',true,true);l.dispatchEvent(e);})()") },
-                1000
+                10
             )
         }
     }
