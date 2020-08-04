@@ -37,7 +37,11 @@ fun bindTextViewHtml(webView: WebView, htmlValue: String) {
             super.onPageFinished(view, url)
             val handler = Handler()
             handler.postDelayed(
-                { webView.loadUrl("javascript:(function(){l=document.getElementById('music_sheet');e=document.createEvent('HTMLEvents');e.initEvent('click',true,true);l.dispatchEvent(e);})()") },
+                {
+                    //webView.loadUrl("javascript:globalVariable('" + 370 + "')")
+                    //webView.loadUrl("javascript:(function(){l=document.getElementById('music_sheet');e=document.createEvent('HTMLEvents');e.initEvent('click',true,true);l.dispatchEvent(e);})()")
+
+                },
                 10
             )
         }

@@ -39,6 +39,10 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
     val noteValuesToDisplay: LiveData<ArrayList<String>>
         get() = _noteValuesToDisplay
 
+    private val _integerValuesToSet = MutableLiveData<Int>()
+    val integerValueToSet: LiveData<Int>
+        get() = _integerValuesToSet
+
     private val _inputTextFromAssets = MutableLiveData<String>()
 
     // The external LiveData for the SelectedNews
@@ -112,15 +116,11 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
             for (i in 0 until _noteValuesToDisplay.value!!.size) {
 
                 when (_noteValuesToDisplay.value!![i]) {
-                    "A2" -> _inputTextFromAssets.postValue(
-                        inputStringPentagram + inputStringNote + inputStringFunction1 + "elem2.style.top = " +
-                                (positionOfNote - 50) + ";" + inputStringFunction2 + (positionOfNote - 50 + 35).toString() +
-                                ";" + inputStringFunction3
+                    "A2" -> _integerValuesToSet.postValue(
+                        180
                     )
-                    "C3" -> _inputTextFromAssets.postValue(
-                        inputStringPentagram + inputStringNote + inputStringFunction1 + "elem2.style.top = " +
-                                (positionOfNote - 100) + ";" + inputStringFunction2 + (positionOfNote - 100 + 35).toString() +
-                                ";" + inputStringFunction3
+                    "C3" -> _integerValuesToSet.postValue(
+                        260
                     )
 
                 }
@@ -142,7 +142,7 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
 
     private fun readTextFromAssets(application: Application, position: Int) {
         try {
-            val inputStreamPentagram: InputStream = application.assets.open("pentagram.txt")
+            val inputStreamPentagram: InputStream = application.assets.open("final1.txt")
             inputStringPentagram = inputStreamPentagram.bufferedReader().use { it.readText() }
 
             val inputStreamNote: InputStream = application.assets.open("note.txt")

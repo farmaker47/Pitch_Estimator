@@ -152,6 +152,14 @@ class SingingFragment : Fragment() {
         )
         binding.textviewKaraoke.text = WordtoSpan*/
 
+        viewModel.integerValueToSet.observe(
+            viewLifecycleOwner,
+            androidx.lifecycle.Observer { position ->
+                binding.allNewsBlockTextView.loadUrl("javascript:myMoveSharp('$position')")
+                //binding.allNewsBlockTextView.loadUrl("javascript:(function(){l=document.getElementById('music_sheet_sharp');e=document.createEvent('HTMLEvents');e.initEvent('click',true,true);l.dispatchEvent(e);})()")
+
+            })
+
         return binding.root
     }
 
