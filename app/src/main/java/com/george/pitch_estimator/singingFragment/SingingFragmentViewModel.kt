@@ -114,11 +114,13 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
                 when (_noteValuesToDisplay.value!![i]) {
                     "A2" -> _inputTextFromAssets.postValue(
                         inputStringPentagram + inputStringNote + inputStringFunction1 + "elem2.style.top = " +
-                                (positionOfNote - 50) + ";" + inputStringFunction2 + (positionOfNote - 50 + 35).toString() + ";" + inputStringFunction3
+                                (positionOfNote - 50) + ";" + inputStringFunction2 + (positionOfNote - 50 + 35).toString() +
+                                ";" + inputStringFunction3
                     )
                     "C3" -> _inputTextFromAssets.postValue(
                         inputStringPentagram + inputStringNote + inputStringFunction1 + "elem2.style.top = " +
-                                (positionOfNote - 100) + ";" + inputStringFunction2 + (positionOfNote - 100 + 35).toString() + ";" + inputStringFunction3
+                                (positionOfNote - 100) + ";" + inputStringFunction2 + (positionOfNote - 100 + 35).toString() +
+                                ";" + inputStringFunction3
                     )
 
                 }
