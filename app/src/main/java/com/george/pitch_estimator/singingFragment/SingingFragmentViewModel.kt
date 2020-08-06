@@ -111,31 +111,6 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
         Log.i("HERTZ", hertzValuesToDisplay.toString())
         _inferenceDone.postValue(true)
 
-        // After inference generate notes
-        try {
-            for (i in 0 until _noteValuesToDisplay.value!!.size) {
-
-                when (_noteValuesToDisplay.value!![i]) {
-                    "A2" -> _integerValuesToSet.postValue(
-                        180
-                    )
-                    "C3" -> _integerValuesToSet.postValue(
-                        260
-                    )
-
-                }
-                /*if (_noteValuesToDisplay.value!![i] == "A2") {
-                    _inputTextFromAssets.postValue(
-                        inputStringPentagram + inputStringNote + inputStringFunction1 + "elem2.style.top = " +
-                                (positionOfNote - 50) + ";" + inputStringFunction2 + (positionOfNote - 50 + 35).toString() + ";" + inputStringFunction3
-                    )
-                }*/
-            }
-        } catch (e: Exception) {
-            Log.e("EXCEPTION", e.toString())
-        }
-
-
         // Load dummy sound file for practice and calibration/ comparison with Colab notebook
         //transcribe("/sdcard/Pitch Estimator/soloupis.wav")
     }
@@ -145,7 +120,7 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
             val inputStreamPentagram: InputStream = application.assets.open("final1.txt")
             inputStringPentagram = inputStreamPentagram.bufferedReader().use { it.readText() }
 
-            val inputStreamNote: InputStream = application.assets.open("note.txt")
+            /*val inputStreamNote: InputStream = application.assets.open("note.txt")
             inputStringNote = inputStreamNote.bufferedReader().use { it.readText() }
 
             val inputStreamFunction1: InputStream = application.assets.open("function1.txt")
@@ -155,7 +130,7 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
             inputStringFunction2 = inputStreamFunction2.bufferedReader().use { it.readText() }
 
             val inputStreamFunction3: InputStream = application.assets.open("function3.txt")
-            inputStringFunction3 = inputStreamFunction3.bufferedReader().use { it.readText() }
+            inputStringFunction3 = inputStreamFunction3.bufferedReader().use { it.readText() }*/
 
             // parse xml
             //val entries = parse(inputStream)

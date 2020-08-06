@@ -48,7 +48,4 @@ fun bindTextViewHtml(webView: WebView, htmlValue: String) {
     }
 
     webView.loadDataWithBaseURL("fake://not/needed", htmlValue, "text/html", "UTF-8", "")
-    //webView.loadData(htmlValue, "text/html", "UTF-8")
-
-    //webView.loadUrl(htmlValue)
 }
