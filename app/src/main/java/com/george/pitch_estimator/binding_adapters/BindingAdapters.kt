@@ -32,7 +32,7 @@ fun bindDoubleArrayHertzToValues(textView: TextView, value: ArrayList<String>?) 
 fun bindTextViewHtml(webView: WebView, htmlValue: String) {
     webView.settings.javaScriptEnabled = true;
 
-    webView.webViewClient = object : WebViewClient() {
+    /*webView.webViewClient = object : WebViewClient() {
         override fun onPageFinished(view: WebView, url: String) {
             super.onPageFinished(view, url)
             val handler = Handler()
@@ -45,7 +45,7 @@ fun bindTextViewHtml(webView: WebView, htmlValue: String) {
                 10
             )
         }
-    }
+    }*/
 
     webView.loadDataWithBaseURL("fake://not/needed", htmlValue, "text/html", "UTF-8", "")
 }
