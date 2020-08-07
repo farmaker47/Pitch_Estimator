@@ -1,6 +1,0 @@
-<script>
-function myMove() {
-
-  var elem2 = document.getElementById("notes-dummy");
-  var elem4 = document.getElementById("container");
-  elem2.scrollLeft = 0;

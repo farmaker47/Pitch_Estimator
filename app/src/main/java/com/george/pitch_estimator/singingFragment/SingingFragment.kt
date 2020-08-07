@@ -10,7 +10,6 @@ import android.os.Handler
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.style.ForegroundColorSpan
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -144,23 +143,6 @@ class SingingFragment : Fragment() {
         // Generate folder for saving .wav later
         generateFolder()
 
-        /*val WordtoSpan: Spannable = SpannableString(getString(R.string.song_lyrics))
-        WordtoSpan.setSpan(
-            ForegroundColorSpan(Color.BLUE),
-            0,
-            13,
-            Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-        )
-        binding.textviewKaraoke.text = WordtoSpan*/
-
-        /*viewModel.integerValueToSet.observe(
-            viewLifecycleOwner,
-            androidx.lifecycle.Observer { position ->
-                binding.allNewsBlockTextView.loadUrl("javascript:myMoveSharp('$position')")
-                //binding.allNewsBlockTextView.loadUrl("javascript:(function(){l=document.getElementById('music_sheet_sharp');e=document.createEvent('HTMLEvents');e.initEvent('click',true,true);l.dispatchEvent(e);})()")
-
-            })*/
-
         viewModel.noteValuesToDisplay.observe(viewLifecycleOwner,
             androidx.lifecycle.Observer { list ->
 
@@ -225,7 +207,7 @@ class SingingFragment : Fragment() {
                             }
                             i++
                             if (i < list.size) {
-                                handler.postDelayed(this, 700)
+                                handler.postDelayed(this, 555)
                             }
                         }
                     })
