@@ -10,6 +10,7 @@ import android.os.Handler
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.style.ForegroundColorSpan
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -20,6 +21,7 @@ import com.george.pitch_estimator.PitchModelExecutor
 import com.george.pitch_estimator.R
 import com.george.pitch_estimator.SingRecorder
 import com.george.pitch_estimator.databinding.FragmentFirstBinding
+import org.koin.android.ext.android.bind
 import org.koin.android.ext.android.get
 import org.koin.android.ext.android.getKoin
 import org.koin.android.viewmodel.ext.android.viewModel
@@ -107,7 +109,6 @@ class SingingFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-
         binding = FragmentFirstBinding.inflate(inflater)
         binding.lifecycleOwner = this
 
@@ -207,7 +208,7 @@ class SingingFragment : Fragment() {
                             }
                             i++
                             if (i < list.size) {
-                                handler.postDelayed(this, 555)
+                                handler.postDelayed(this, TIME_DELAY_FOR_NOTES)
                             }
                         }
                     })
@@ -279,5 +280,9 @@ class SingingFragment : Fragment() {
         }*/
 
 
+    }
+
+    companion object {
+        private const val TIME_DELAY_FOR_NOTES = 555L
     }
 }

@@ -17,7 +17,7 @@ class PitchModelExecutor(
     private var gpuDelegate: GpuDelegate = GpuDelegate()
     private var numberThreads = 4
 
-    private val interpreter: Interpreter
+    private lateinit var interpreter: Interpreter
     private var predictTime = 0L
     val note_names = mapOf(
         // musical notes
@@ -37,12 +37,10 @@ class PitchModelExecutor(
     )
 
     init {
-        if (useGPU) {
-            interpreter = getInterpreter(context, PITCH_MODEL, true)
-            Log.i("GPU_TRUE", "TRUE")
+        interpreter = if (useGPU) {
+            getInterpreter(context, PITCH_MODEL, true)
         } else {
-            interpreter = getInterpreter(context, PITCH_MODEL, false)
-            Log.i("GPU_FALSE", "FALSE")
+            getInterpreter(context, PITCH_MODEL, false)
         }
     }
 
@@ -98,19 +96,12 @@ class PitchModelExecutor(
             }
         }
 
-        /*Log.i("PITCHES_OVER_0.9", arrayForConfidence.size.toString())
-        for (k in 0 until arrayForConfidence.size) {
-            Log.i("PITCHES_OVER_0.9", arrayForConfidence[k].toString())
-        }*/
-
         // The pitch values returned by SPICE are in the range from 0 to 1.
         // Let's convert them to absolute pitch values in Hz.
         val hertzValues = DoubleArray(arrayForConfidence.size)
         for (i in 0 until arrayForConfidence.size) {
             hertzValues[i] = convertToAbsolutePitchValuesInHz(arrayForConfidence[i])
         }
-
-        //Log.i("HERTZ_VALUES", hertzValues.contentToString())
 
         // Calculate the offset during singing
         // When a person sings freely, the melody may have an offset to the absolute pitch values that notes can represent.
@@ -120,11 +111,6 @@ class PitchModelExecutor(
             if (hertzValues[i] > 0)
                 arrayForOffset.add(hzToOffset(hertzValues[i].toFloat()))
         }
-
-        /*Log.e("OFFSETS", arrayForOffset.size.toString())
-        for (k in 0 until arrayForOffset.size) {
-            Log.e("OFFSETS", arrayForOffset[k].toString())
-        }*/
 
         val idealOffset = arrayForOffset.average()
 
@@ -157,7 +143,7 @@ class PitchModelExecutor(
 
         Log.i("BEST_ERROR", bestError.toString())
         for (i in 0 until bestNotesAndRests.size) {
-            Log.e("NOTES_AND_RESTS", bestNotesAndRests[i])
+            Log.i("NOTES_AND_RESTS", bestNotesAndRests[i])
         }
 
         // Remove rest at beginning and end of arrayList
@@ -170,28 +156,26 @@ class PitchModelExecutor(
             } else if (i == bestNotesAndRests.size - 1 && bestNotesAndRests[bestNotesAndRests.size - 1] != "Rest"
             ) {
                 noRestInBeginningAndEnd.add(bestNotesAndRests[i])
-                //Log.i("3", "3")
             }
         }
 
         predictTime = System.currentTimeMillis() - predictTime
-        Log.e("PITCHES_TIME", predictTime.toString())
+        Log.i("PITCHES_TIME", predictTime.toString())
 
         return noRestInBeginningAndEnd//hertzValues DoubleArray
     }
 
     private fun convertToAbsolutePitchValuesInHz(value: Float): Double {
-        if (value != 0F) {
-            val cqt_bin = value * PT_SLOPE + PT_OFFSET
-            return FMIN * (2.0.pow(cqt_bin / BINS_PER_OCTAVE))
+        return if (value != 0F) {
+            val cqtBin = value * PT_SLOPE + PT_OFFSET
+            FMIN * (2.0.pow(cqtBin / BINS_PER_OCTAVE))
         } else {
-            return 0.toDouble()
+            0.toDouble()
         }
     }
 
     private fun hzToOffset(hertzFloat: Float): Float {
         val h = (12 * log2(hertzFloat / C0)).roundToInt().toFloat()
-        //Log.i("ROUND", h.toString())
         return (12 * log2(hertzFloat / C0) - h).toFloat()
     }
 
@@ -213,26 +197,26 @@ class PitchModelExecutor(
             return Pair(0.51 * non_zero_values.size, "Rest")
         } else {
             // Interpret as note, estimating as mean of non-rest predictions.
-            val non_zero_average_values = arrayListOf<Float>()
+            val nonZeroAverageValues = arrayListOf<Float>()
             for (i in 0 until non_zero_values.size) {
-                non_zero_average_values.add((12 * log2(non_zero_values[i] / C0) - ideal_offset).toFloat())
+                nonZeroAverageValues.add((12 * log2(non_zero_values[i] / C0) - ideal_offset).toFloat())
             }
 
-            val h = non_zero_average_values.average().roundToInt()
+            val h = nonZeroAverageValues.average().roundToInt()
             val octave = h / 12
             //Log.i("OCTAVE",octave.toString())
             val n = h.rem(12)
             //Log.i("NOTE",n.toString())
             val note = note_names[n] + octave.toString()
             // Quantization error is the total difference from the quantized note.
-            val non_zero_error_values = arrayListOf<Float>()
+            val nonZeroErrorValues = arrayListOf<Float>()
             for (i in 0 until non_zero_values.size) {
-                non_zero_error_values.add(
+                nonZeroErrorValues.add(
                     abs(12 * log2(non_zero_values[i] / C0) - ideal_offset - h)
                         .toFloat()
                 )
             }
-            val error = non_zero_error_values.sum()
+            val error = nonZeroErrorValues.sum()
 
             return Pair(error.toDouble(), note)
         }
@@ -251,8 +235,6 @@ class PitchModelExecutor(
         for (i in pitch_outputs_and_rests.indices) {
             pitchOutputsAndRestsWithOffset.add(pitch_outputs_and_rests[i].toFloat())
         }
-
-        //Log.i("SIZE", pitch_outputs_and_rests_with_offset.size.toString())
 
         val groups = arrayListOf<FloatArray>()
         for (i in 0 until pitchOutputsAndRestsWithOffset.size step predictions_per_eighth) {
@@ -297,6 +279,11 @@ class PitchModelExecutor(
         val declaredLength = fileDescriptor.declaredLength
         val retFile = fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength)
         fileDescriptor.close()
+        try {
+
+        } catch (e: Exception) {
+            Log.e("FIND_ERROR", e.toString())
+        }
         return retFile
     }
 
