@@ -269,7 +269,6 @@ class PitchModelExecutor(
         return Pair(quantizationError.toFloat(), notesAndRests)
     }
 
-
     @Throws(IOException::class)
     private fun loadModelFile(context: Context, modelFile: String): MappedByteBuffer {
         val fileDescriptor = context.assets.openFd(modelFile)
