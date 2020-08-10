@@ -31,8 +31,6 @@ fun bindDoubleArrayHertzToValues(textView: TextView, value: ArrayList<String>?) 
 @BindingAdapter("htmlToScreen")
 fun bindTextViewHtml(webView: WebView, htmlValue: String) {
 
-    //webView.clearHistory();
-    //webView.clearCache(true)
     webView.settings.javaScriptEnabled = true
 
     /*webView.webViewClient = object : WebViewClient() {
@@ -51,5 +49,4 @@ fun bindTextViewHtml(webView: WebView, htmlValue: String) {
     }*/
 
     webView.loadDataWithBaseURL("fake://not/needed", htmlValue, "text/html", "UTF-8", "")
-    //webView.freeMemory()
 }
