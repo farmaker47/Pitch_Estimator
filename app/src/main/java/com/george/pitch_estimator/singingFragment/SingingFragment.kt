@@ -282,6 +282,19 @@ class SingingFragment : Fragment() {
 
     }
 
+    override fun onPause() {
+        super.onPause()
+
+        // Stop processes when app goes on background
+        singingStopped()
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+
+        singingStopped()
+    }
+
     companion object {
         private const val TIME_DELAY_FOR_NOTES = 555L
     }
