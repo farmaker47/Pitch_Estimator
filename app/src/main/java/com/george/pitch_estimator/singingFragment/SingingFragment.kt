@@ -38,22 +38,22 @@ class SingingFragment : Fragment() {
     private lateinit var singRecorder: SingRecorder
     private lateinit var pitchModelExecutor: PitchModelExecutor
 
-    //Permissions
+    // Permissions
     var PERMISSION_ALL = 123
     var PERMISSIONS = arrayOf(
         Manifest.permission.RECORD_AUDIO,
         Manifest.permission.WRITE_EXTERNAL_STORAGE
     )
 
-    //update interval for widget
+    // Update interval for widget
     val UPDATE_INTERVAL_INFERENCE = 2048L
     val UPDATE_INTERVAL_KARAOKE = 340L
 
-    //Handler to repeat update
+    // Handler to repeat update
     private val updateWidgetHandler = Handler()
     private val updateKaraokeHandler = Handler()
 
-    //runnable to loop every 2 seconds with writing sound and inferring
+    // Runnable to loop every 2 seconds with writing sound and inferring
     private var updateWidgetRunnable: Runnable = Runnable {
         run {
 
@@ -73,7 +73,7 @@ class SingingFragment : Fragment() {
 
     }
 
-    //runnable to loop every 2 seconds with writing sound and inferring
+    // Runnable to loop every 2 seconds with writing sound and inferring
     private var updateKaraokeRunnable: Runnable = Runnable {
         run {
 
@@ -125,15 +125,13 @@ class SingingFragment : Fragment() {
             } else {
                 // Start animation
                 animateSharkButton()
-                // Start immediately
+                // Start process immediately
                 updateWidgetHandler.postDelayed(updateWidgetRunnable, 0)
 
                 // Start karaoke
                 updateKaraokeHandler.postDelayed(updateKaraokeRunnable, 0)
 
-                //binding.buttonForSinging.text = "Stop singing"
                 //Toast.makeText(activity, "Singing has started", Toast.LENGTH_LONG).show()
-
 
             }
         }
@@ -144,6 +142,7 @@ class SingingFragment : Fragment() {
         // Generate folder for saving .wav later
         generateFolder()
 
+        // Observe notes as they come out of model and update webview respectively
         viewModel.noteValuesToDisplay.observe(viewLifecycleOwner,
             androidx.lifecycle.Observer { list ->
 
@@ -222,9 +221,9 @@ class SingingFragment : Fragment() {
         // Remove callback to stop collecting sound
         updateWidgetHandler.removeCallbacks(updateWidgetRunnable)
 
+        // Clear animation
         binding.buttonAnimated.clearAnimation()
 
-        //binding.buttonForSinging.text = "Start singing"
         //Toast.makeText(activity, "Singing has stopped", Toast.LENGTH_LONG).show()
     }
 
@@ -270,16 +269,6 @@ class SingingFragment : Fragment() {
         permissions: Array<String?>,
         grantResults: IntArray
     ) {
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-
-        /*view.findViewById<Button>(R.id.button_first).setOnClickListener {
-            findNavController().navigate(R.id.action_FirstFragment_to_SecondFragment)
-        }*/
-
-
     }
 
     override fun onPause() {

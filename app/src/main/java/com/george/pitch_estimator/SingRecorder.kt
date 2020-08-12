@@ -413,13 +413,6 @@ class SingRecorder(
     }
 
     /**
-     * Trim the silence from this recording.
-     */
-    private fun trimSilence() {
-        //
-    }
-
-    /**
      * Write a 32-bit integer to an output stream, in Little Endian format.
      *
      * @param output Output stream

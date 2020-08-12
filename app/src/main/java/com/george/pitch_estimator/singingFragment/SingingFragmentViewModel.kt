@@ -21,14 +21,6 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
     lateinit var singRecorderObject: SingRecorder
     lateinit var pitchModelExecutorObject: PitchModelExecutor
     lateinit var inputStringPentagram: String
-    lateinit var inputStringNote: String
-    lateinit var inputStringFunction1: String
-    lateinit var inputStringFunction2: String
-    lateinit var inputStringFunction3: String
-    var positionOfNote: Int = 0
-
-    data class Entry(val title: String?, val summary: String?, val link: String?)
-
     var _singingRunning = false
 
     private val _hertzValuesToDisplay = MutableLiveData<DoubleArray>()
@@ -54,7 +46,8 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
         get() = _inferenceDone
 
     init {
-        readTextFromAssets(application, -280)
+        // Start with loading musical pentagram from assets folder html code
+        readTextFromAssets(application)
 
         // Initialize arraylist
         _noteValuesToDisplay.value = arrayListOf()
@@ -97,6 +90,8 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
         // reset stream
         singRecorderObject.reInitializePcmStream()
 
+        // The input must be normalized to floats between -1 and 1.
+        // To normalize it, we just need to divide all the values by 2**16 or in our code, MAX_ABS_INT16 = 32768
         val floatsForInference = FloatArray(arrayListShorts.size)
         for ((index, value) in arrayListShorts.withIndex()) {
             floatsForInference[index] = (value / 32768F)
@@ -105,7 +100,6 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
         Log.i("FLOATS", floatsForInference.takeLast(100).toString())
 
         // Inference
-        //_hertzValuesToDisplay.postValue(pitchModelExecutorObject.execute(floatsForInference))
         _inferenceDone.postValue(false)
         _noteValuesToDisplay.postValue(pitchModelExecutorObject.execute(floatsForInference))
         Log.i("HERTZ", hertzValuesToDisplay.toString())
@@ -115,160 +109,15 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
         //transcribe("/sdcard/Pitch Estimator/soloupis.wav")
     }
 
-    private fun readTextFromAssets(application: Application, position: Int) {
+    private fun readTextFromAssets(application: Application) {
         try {
             val inputStreamPentagram: InputStream = application.assets.open("final1.txt")
             inputStringPentagram = inputStreamPentagram.bufferedReader().use { it.readText() }
 
-            /*val inputStreamNote: InputStream = application.assets.open("note.txt")
-            inputStringNote = inputStreamNote.bufferedReader().use { it.readText() }
-
-            val inputStreamFunction1: InputStream = application.assets.open("function1.txt")
-            inputStringFunction1 = inputStreamFunction1.bufferedReader().use { it.readText() }
-
-            val inputStreamFunction2: InputStream = application.assets.open("function2.txt")
-            inputStringFunction2 = inputStreamFunction2.bufferedReader().use { it.readText() }
-
-            val inputStreamFunction3: InputStream = application.assets.open("function3.txt")
-            inputStringFunction3 = inputStreamFunction3.bufferedReader().use { it.readText() }*/
-
-            // parse xml
-            //val entries = parse(inputStream)
-            /*val output = StringBuilder().apply {
-                append("<h3>${"Some"}</h3>")
-                append("<em>${"Some"} ")
-                append("${"Some"}</em>")
-                // StackOverflowXmlParser returns a List (called "entries") of Entry objects.
-                // Each Entry object represents a single post in the XML feed.
-                // This section processes the entries list to combine each entry with HTML markup.
-                // Each entry is displayed in the UI as a link that optionally includes
-                // a text summary.
-                entries.forEach { entry ->
-                    append("<p><a href='")
-                }
-            }.toString()*/
-            positionOfNote = position
-
-            _inputTextFromAssets.value =
-                inputStringPentagram /*+ inputStringNote + inputStringFunction1 + "elem2.style.top = " +
-                        position + ";" + inputStringFunction2 + (position + 35).toString() + ";" + inputStringFunction3*/
+            _inputTextFromAssets.value = inputStringPentagram
             Log.i("HTML", inputTextFromAssets.value)
         } catch (e: Exception) {
             Log.e("EXCEPTION_READ", e.toString())
-        }
-    }
-
-    @Throws(XmlPullParserException::class, IOException::class)
-    fun parse(inputStream: InputStream): List<*> {
-        inputStream.use { inputStream ->
-            val parser: XmlPullParser = Xml.newPullParser()
-            parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
-            parser.setInput(inputStream, null)
-            parser.nextTag()
-            return readFeed(parser)
-        }
-    }
-
-    private val ns: String? = null
-
-    @Throws(XmlPullParserException::class, IOException::class)
-    private fun readFeed(parser: XmlPullParser): List<Entry> {
-        val entries = mutableListOf<Entry>()
-
-        parser.require(XmlPullParser.START_TAG, ns, "feed")
-        while (parser.next() != XmlPullParser.END_TAG) {
-            if (parser.eventType != XmlPullParser.START_TAG) {
-                continue
-            }
-            // Starts by looking for the entry tag
-            if (parser.name == "entry") {
-                entries.add(readEntry(parser))
-            } else {
-                skip(parser)
-            }
-        }
-        return entries
-    }
-
-    // Parses the contents of an entry. If it encounters a title, summary, or link tag, hands them off
-    // to their respective "read" methods for processing. Otherwise, skips the tag.
-    @Throws(XmlPullParserException::class, IOException::class)
-    private fun readEntry(parser: XmlPullParser): Entry {
-        parser.require(XmlPullParser.START_TAG, ns, "entry")
-        var title: String? = null
-        var summary: String? = null
-        var link: String? = null
-        while (parser.next() != XmlPullParser.END_TAG) {
-            if (parser.eventType != XmlPullParser.START_TAG) {
-                continue
-            }
-            when (parser.name) {
-                "title" -> title = readTitle(parser)
-                "summary" -> summary = readSummary(parser)
-                "link" -> link = readLink(parser)
-                else -> skip(parser)
-            }
-        }
-        return Entry(title, summary, link)
-    }
-
-    // Processes title tags in the feed.
-    @Throws(IOException::class, XmlPullParserException::class)
-    private fun readTitle(parser: XmlPullParser): String {
-        parser.require(XmlPullParser.START_TAG, ns, "title")
-        val title = readText(parser)
-        parser.require(XmlPullParser.END_TAG, ns, "title")
-        return title
-    }
-
-    // Processes link tags in the feed.
-    @Throws(IOException::class, XmlPullParserException::class)
-    private fun readLink(parser: XmlPullParser): String {
-        var link = ""
-        parser.require(XmlPullParser.START_TAG, ns, "link")
-        val tag = parser.name
-        val relType = parser.getAttributeValue(null, "rel")
-        if (tag == "link") {
-            if (relType == "alternate") {
-                link = parser.getAttributeValue(null, "href")
-                parser.nextTag()
-            }
-        }
-        parser.require(XmlPullParser.END_TAG, ns, "link")
-        return link
-    }
-
-    // Processes summary tags in the feed.
-    @Throws(IOException::class, XmlPullParserException::class)
-    private fun readSummary(parser: XmlPullParser): String {
-        parser.require(XmlPullParser.START_TAG, ns, "summary")
-        val summary = readText(parser)
-        parser.require(XmlPullParser.END_TAG, ns, "summary")
-        return summary
-    }
-
-    // For the tags title and summary, extracts their text values.
-    @Throws(IOException::class, XmlPullParserException::class)
-    private fun readText(parser: XmlPullParser): String {
-        var result = ""
-        if (parser.next() == XmlPullParser.TEXT) {
-            result = parser.text
-            parser.nextTag()
-        }
-        return result
-    }
-
-    @Throws(XmlPullParserException::class, IOException::class)
-    private fun skip(parser: XmlPullParser) {
-        if (parser.eventType != XmlPullParser.START_TAG) {
-            throw IllegalStateException()
-        }
-        var depth = 1
-        while (depth != 0) {
-            when (parser.next()) {
-                XmlPullParser.END_TAG -> depth--
-                XmlPullParser.START_TAG -> depth++
-            }
         }
     }
 

@@ -12,12 +12,11 @@ import kotlin.math.*
 
 class PitchModelExecutor(
     context: Context,
-    private var useGPU: Boolean
+    useGPU: Boolean
 ) {
     private var gpuDelegate: GpuDelegate = GpuDelegate()
     private var numberThreads = 4
-
-    private lateinit var interpreter: Interpreter
+    private var interpreter: Interpreter
     private var predictTime = 0L
     val note_names = mapOf(
         // musical notes
@@ -44,6 +43,9 @@ class PitchModelExecutor(
         }
     }
 
+    // Values from original blog post colab notebook
+    // https://colab.sandbox.google.com/github/tensorflow/hub/blob/master/examples/colab/spice.ipynb
+    // https://blog.tensorflow.org/2020/06/estimating-pitch-with-spice-and-tensorflow-hub.html
     companion object {
         private const val PITCH_MODEL = "lite-model_spice_1.tflite"
         private const val PT_OFFSET = 25.58
@@ -56,9 +58,10 @@ class PitchModelExecutor(
     fun execute(floatsInput: FloatArray): ArrayList<String> {
 
         predictTime = System.currentTimeMillis()
-        val inputSize = floatsInput.size // ~10 seconds of sound
+        val inputSize = floatsInput.size // ~2 seconds of sound
         var outputSize = 0
         when (inputSize) {
+            // 16.000 * 2 seconds recording
             32000 -> outputSize = ceil(inputSize / 512.0).toInt()
             else -> outputSize = (ceil(inputSize / 512.0) + 1).toInt()
         }
@@ -72,7 +75,7 @@ class PitchModelExecutor(
 
         outputs[0] = pitches
         outputs[1] = uncertainties
-        //Log.e("INPUTS_SIZE", floatsInput.size.toString())
+
         try {
             interpreter.runForMultipleInputsOutputs(inputs, outputs)
         } catch (e: Exception) {
@@ -113,9 +116,15 @@ class PitchModelExecutor(
         }
 
         val idealOffset = arrayForOffset.average()
-
         //Log.i("OFFSETS_AVERAGE", idealOffset.toString())
 
+        // We can now use some heuristics to try and estimate the most likely sequence of notes that were sung.
+        // The ideal offset computed above is one ingredient - but we also need to know the speed
+        // (how many predictions make, say, an eighth?), and the time offset to start quantizing.
+        // To keep it simple, we'll just try different speeds and time offsets and measure the quantization error,
+        // using in the end the values that minimize this error.
+
+        // Code translation from python notebook from https://colab.sandbox.google.com/github/tensorflow/hub/blob/master/examples/colab/spice.ipynb
         var bestError = 10000000000000F//("+Inf").toFloat()
         var bestNotesAndRests = arrayListOf<String>()
         var bestPredictionsPerNote = 0
@@ -269,6 +278,7 @@ class PitchModelExecutor(
         return Pair(quantizationError.toFloat(), notesAndRests)
     }
 
+    // load tflite file from assets folder
     @Throws(IOException::class)
     private fun loadModelFile(context: Context, modelFile: String): MappedByteBuffer {
         val fileDescriptor = context.assets.openFd(modelFile)
@@ -296,9 +306,6 @@ class PitchModelExecutor(
         if (useGpu) {
             gpuDelegate = GpuDelegate()
             tfliteOptions.addDelegate(gpuDelegate)
-
-            //val delegate =
-            //GpuDelegate(GpuDelegate.Options().setQuantizedModelsAllowed(true))
         }
 
         tfliteOptions.setNumThreads(numberThreads)
