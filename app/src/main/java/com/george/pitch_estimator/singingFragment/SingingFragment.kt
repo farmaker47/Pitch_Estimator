@@ -15,6 +15,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.AnimationUtils
+import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
 import com.george.pitch_estimator.PitchModelExecutor
@@ -217,7 +218,7 @@ class SingingFragment : Fragment() {
         return binding.root
     }
 
-    private fun singingStopped() {
+    fun singingStopped() {
         // Remove callback to stop collecting sound
         updateWidgetHandler.removeCallbacks(updateWidgetRunnable)
 
@@ -275,12 +276,6 @@ class SingingFragment : Fragment() {
         super.onPause()
 
         // Stop processes when app goes on background
-        singingStopped()
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-
         singingStopped()
     }
 
