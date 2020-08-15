@@ -111,7 +111,7 @@ newdiv.style.bottom = position;
 
 // Try one
 
-  var pos2 = 400;
+  var pos2 = 360;
   var id2 = setInterval(frame2, 10);
  
   function frame2() {
@@ -155,7 +155,7 @@ newdiv.style.bottom = position;
 
 // Try one
 
-  var pos2 = 400;
+  var pos2 = 360;
   var id2 = setInterval(frame2, 10);
  
   function frame2() {

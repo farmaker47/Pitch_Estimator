@@ -1,4 +1,6 @@
 <resources>
     <dimen name="fab_margin">16dp</dimen>
     <dimen name="webViewMargin">24dp</dimen>
+    <dimen name="webViewWidth">400dp</dimen>
+    <dimen name="webViewHeight">340dp</dimen>
 </resources>

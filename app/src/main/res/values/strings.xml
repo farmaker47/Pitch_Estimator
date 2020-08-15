@@ -8,5 +8,7 @@
     <string name="previous">Previous</string>
     <string name="hello_first_fragment">Hello first fragment</string>
     <string name="hello_second_fragment">Hello second fragment. Arg: %1$s</string>
-    <string name="song_lyrics">\'Baby shark doo doo doo doo doo doo, baby shark doo doo doo doo doo doo, baby shark.\'</string>
+    <string name="song_lyrics_baby">\'Baby shark doo doo doo doo doo doo, baby shark doo doo doo doo doo doo, baby shark doo doo doo doo doo doo, baby shark\'</string>
+    <string name="song_lyrics_mummy">\'Mummy shark doo doo doo doo doo doo, mummy shark doo doo doo doo doo doo, mummy shark doo doo doo doo doo doo, mummy shark.\'</string>
+
 </resources>

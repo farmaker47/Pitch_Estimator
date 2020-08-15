@@ -38,6 +38,8 @@ class SingingFragment : Fragment() {
     private val viewModel: SingingFragmentViewModel by viewModel()
     private lateinit var singRecorder: SingRecorder
     private lateinit var pitchModelExecutor: PitchModelExecutor
+    private lateinit var wordToSpan: Spannable
+    private lateinit var wordToSpanMummy: Spannable
 
     // Permissions
     var PERMISSION_ALL = 123
@@ -48,7 +50,7 @@ class SingingFragment : Fragment() {
 
     // Update interval for widget
     val UPDATE_INTERVAL_INFERENCE = 2048L
-    val UPDATE_INTERVAL_KARAOKE = 340L
+    val UPDATE_INTERVAL_KARAOKE = 400L
 
     // Handler to repeat update
     private val updateWidgetHandler = Handler()
@@ -78,30 +80,65 @@ class SingingFragment : Fragment() {
     private var updateKaraokeRunnable: Runnable = Runnable {
         run {
 
+            for (i in 1..24) {
+
+                val handler = Handler()
+                handler.postDelayed({
+                    wordToSpan =
+                        SpannableString(getString(R.string.song_lyrics_baby))
+                    wordToSpan.setSpan(
+                        ForegroundColorSpan(Color.BLUE),
+                        0,
+                        5 * i,
+                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                    )
+                    binding.textviewKaraoke.text = wordToSpan
+
+                    // Change words when first words stop
+                    if (i == 24) {
+
+                        val handlerRest = Handler()
+                        handlerRest.postDelayed({
+
+                            // set new text
+                            binding.textviewKaraoke.text = getString(R.string.song_lyrics_mummy)
+
+                            for (k in 1..25) {
+
+                                val handlerMummy = Handler()
+                                handlerMummy.postDelayed({
+                                    wordToSpanMummy =
+                                        SpannableString(getString(R.string.song_lyrics_mummy))
+                                    wordToSpanMummy.setSpan(
+                                        ForegroundColorSpan(Color.BLUE),
+                                        0,
+                                        5 * k,
+                                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                                    )
+                                    binding.textviewKaraoke.text = wordToSpanMummy
+
+                                    // Stop everything after end of song
+                                    if (k == 25) {
+                                        singingStopped()
+                                    }
+
+                                }, UPDATE_INTERVAL_KARAOKE * k)
+
+                            }
+
+                        }, 1400)
+
+
+                    }
+
+                }, UPDATE_INTERVAL_KARAOKE * i)
+
+            }
+
             try {
-                for (i in 1..17) {
 
-                    val handler = Handler()
-                    handler.postDelayed({
-                        val wordtoSpan: Spannable = SpannableString(getString(R.string.song_lyrics))
-                        wordtoSpan.setSpan(
-                            ForegroundColorSpan(Color.BLUE),
-                            0,
-                            5 * i,
-                            Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-                        )
-                        binding.textviewKaraoke.text = wordtoSpan
-
-                        // Stop everything after end of song
-                        /*if(i==17){
-                            singingStopped()
-                        }*/
-
-                    }, UPDATE_INTERVAL_KARAOKE * i)
-
-                }
             } finally {
-                //singingStopped()
+
             }
         }
     }
