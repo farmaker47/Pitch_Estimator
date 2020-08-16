@@ -1,8 +1,8 @@
 package com.george.pitch_estimator.singingFragment
 
 import android.app.Application
+import android.os.Handler
 import android.util.Log
-import android.util.Xml
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -12,8 +12,6 @@ import com.george.pitch_estimator.SingRecorder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.xmlpull.v1.XmlPullParser
-import org.xmlpull.v1.XmlPullParserException
 import java.io.*
 
 class SingingFragmentViewModel(application: Application) : AndroidViewModel(application) {
@@ -22,6 +20,9 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
     lateinit var pitchModelExecutorObject: PitchModelExecutor
     lateinit var inputStringPentagram: String
     var _singingRunning = false
+    // Handler to repeat update
+    private val updateLoopSingingHandler = Handler()
+    private val updateKaraokeHandler = Handler()
 
     private val _hertzValuesToDisplay = MutableLiveData<DoubleArray>()
     val hertzValuesToDisplay: LiveData<DoubleArray>
@@ -79,6 +80,12 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
         viewModelScope.launch {
             doInference(stream, streamForInference)
         }
+
+    }
+
+    fun stopAllSinging(){
+        updateLoopSingingHandler.removeCallbacks(updateLoopSingingRunnable)
+        //updateKaraokeHandler.removeCallbacks(updateKaraokeRunnable)
     }
 
     private suspend fun doInference(
@@ -119,6 +126,31 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
         } catch (e: Exception) {
             Log.e("EXCEPTION_READ", e.toString())
         }
+    }
+
+    fun setUpdateWidgetRunnable(){
+        updateLoopSingingHandler.postDelayed(updateLoopSingingRunnable, 0)
+    }
+
+    private var updateLoopSingingRunnable: Runnable = Runnable {
+        run {
+
+            // Start singing
+            startSinging()
+
+            // Stop after 2048 millis
+            val handler = Handler()
+            handler.postDelayed({
+                stopSinging()
+            }, SingingFragment.UPDATE_INTERVAL_INFERENCE)
+
+            // Re-run it after the update interval
+            updateLoopSingingHandler.postDelayed(updateLoopSingingRunnable,
+                SingingFragment.UPDATE_INTERVAL_INFERENCE
+            )
+
+        }
+
     }
 
     /*private fun transcribe(audioFile: String) {

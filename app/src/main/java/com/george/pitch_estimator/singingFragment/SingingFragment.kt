@@ -65,10 +65,10 @@ class SingingFragment : Fragment() {
     )
 
     // Handler to repeat update
-    private val updateWidgetHandler = Handler()
+    //private val updateWidgetHandler = Handler()
     private val updateKaraokeHandler = Handler()
 
-    // Runnable to loop every 2 seconds with writing sound and inferring
+   /* // Runnable to loop every 2 seconds with writing sound and inferring
     private var updateWidgetRunnable: Runnable = Runnable {
         run {
 
@@ -86,7 +86,7 @@ class SingingFragment : Fragment() {
 
         }
 
-    }
+    }*/
 
     // Runnable to loop every 2 seconds with writing sound and inferring
     private var updateKaraokeRunnable: Runnable = Runnable {
@@ -146,12 +146,6 @@ class SingingFragment : Fragment() {
                 }, UPDATE_INTERVAL_KARAOKE * i)
 
             }
-
-            try {
-
-            } finally {
-
-            }
         }
     }
 
@@ -176,7 +170,8 @@ class SingingFragment : Fragment() {
                 // Start animation
                 animateSharkButton()
                 // Start process immediately
-                updateWidgetHandler.postDelayed(updateWidgetRunnable, 0)
+                //updateWidgetHandler.postDelayed(updateWidgetRunnable, 0)
+                viewModel.setUpdateWidgetRunnable()
 
                 // Start karaoke
                 updateKaraokeHandler.postDelayed(updateKaraokeRunnable, 0)
@@ -269,7 +264,8 @@ class SingingFragment : Fragment() {
 
     fun singingStopped() {
         // Remove callback to stop collecting sound
-        updateWidgetHandler.removeCallbacks(updateWidgetRunnable)
+        //updateWidgetHandler.removeCallbacks(updateWidgetRunnable)
+        viewModel.stopAllSinging()
 
         // Clear animation
         binding.buttonAnimated.clearAnimation()
@@ -331,7 +327,7 @@ class SingingFragment : Fragment() {
     companion object {
         private const val TIME_DELAY_FOR_NOTES = 555L
         // Update interval for widget
-        private const val UPDATE_INTERVAL_INFERENCE = 2048L
-        private const val UPDATE_INTERVAL_KARAOKE = 400L
+        const val UPDATE_INTERVAL_INFERENCE = 2048L
+        const val UPDATE_INTERVAL_KARAOKE = 400L
     }
 }
