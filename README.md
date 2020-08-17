@@ -10,3 +10,7 @@ SPICE is a pretrained model that can recognize the fundamental pitch from mixed 
 You can follow along with this [Colab notebook](https://colab.sandbox.google.com/github/tensorflow/hub/blob/master/examples/colab/spice.ipynb).
 
 [Demo](https://youtu.be/v1d3o4r40PQ) of the project
+
+**Screenshot**
+
+<img src="shot.jpg" width="256" height="540">
