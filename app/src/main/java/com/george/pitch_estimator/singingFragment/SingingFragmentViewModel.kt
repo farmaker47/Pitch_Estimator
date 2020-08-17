@@ -68,6 +68,13 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
 
         // Initialize arraylist
         _noteValuesToDisplay.value = arrayListOf()
+
+        // Init textview words
+        _spannableForKaraoke.value = SpannableString(application.getString(R.string.song_lyrics_baby))
+    }
+
+    fun setNotesOnStart(){
+        _noteValuesToDisplay.value = arrayListOf()
     }
 
     fun setSingRecorderModule(singRecorder: SingRecorder, pitchModelExecutor: PitchModelExecutor) {
@@ -141,7 +148,7 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
             _inputTextFromAssets.value = inputStringPentagram
             Log.i("HTML", inputTextFromAssets.value)
         } catch (e: Exception) {
-            Log.e("EXCEPTION_READ", e.toString())
+            Log.e("EXCEPTION_READ_HTML", e.toString())
         }
     }
 
@@ -315,6 +322,9 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
 
     override fun onCleared() {
         super.onCleared()
+        // Below stopAllSinging to execute when back button is used
+        stopAllSinging()
+
         pitchModelExecutorObject.close()
     }
 }

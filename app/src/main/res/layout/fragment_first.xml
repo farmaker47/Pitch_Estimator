@@ -28,7 +28,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:padding="32dp"
-                android:text="@string/song_lyrics_baby"
+                android:text="@{viewModelxml.spannableForKaraoke}"
                 android:textColor="#fff"
                 android:textSize="24sp"
                 app:layout_constraintBottom_toTopOf="@id/buttonForSinging"

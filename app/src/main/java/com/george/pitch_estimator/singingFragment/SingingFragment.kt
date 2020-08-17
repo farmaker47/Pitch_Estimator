@@ -169,13 +169,14 @@ class SingingFragment : Fragment() {
                 }
             })
 
-        // Observe viewmodel object
-        viewModel.spannableForKaraoke.observe(
+        // Observe viewmodel objects
+        /*viewModel.spannableForKaraoke.observe(
             requireActivity(),
             Observer { karaokeString ->
                 binding.textviewKaraoke.text = karaokeString
             }
-        )
+        )*/
+        //binding.textviewKaraoke.text = getString(R.string.song_lyrics_baby)
 
         viewModel.singingEnd.observe(
             requireActivity(),
@@ -254,11 +255,16 @@ class SingingFragment : Fragment() {
         //singingStopped()
     }
 
+    override fun onResume() {
+        super.onResume()
+        //viewModel.setNotesOnStart()
+    }
+
     companion object {
         private const val TIME_DELAY_FOR_NOTES = 555L
 
         // Update interval for widget
         const val UPDATE_INTERVAL_INFERENCE = 2048L
-        const val UPDATE_INTERVAL_KARAOKE = 400L
+        const val UPDATE_INTERVAL_KARAOKE = 440L
     }
 }
