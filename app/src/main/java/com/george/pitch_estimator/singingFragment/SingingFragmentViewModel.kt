@@ -25,6 +25,7 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
     lateinit var pitchModelExecutorObject: PitchModelExecutor
     lateinit var inputStringPentagram: String
     var _singingRunning = false
+
     // Handler to repeat update
     private val updateLoopSingingHandler = Handler()
     private val updateKaraokeHandler = Handler()
@@ -48,6 +49,7 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
         get() = _inputTextFromAssets
 
     private val _spannableForKaraoke = MutableLiveData<SpannableString>()
+
     // The external LiveData for the SelectedNews
     val spannableForKaraoke: LiveData<SpannableString>
         get() = _spannableForKaraoke
@@ -97,9 +99,10 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
 
     }
 
-    fun stopAllSinging(){
+    fun stopAllSinging() {
         updateLoopSingingHandler.removeCallbacks(updateLoopSingingRunnable)
         updateKaraokeHandler.removeCallbacks(updateKaraokeRunnable)
+        _singingEnd.value = true
     }
 
     private suspend fun doInference(
@@ -142,11 +145,11 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
         }
     }
 
-    fun setUpdateLoopSingingHandler(){
+    fun setUpdateLoopSingingHandler() {
         updateLoopSingingHandler.postDelayed(updateLoopSingingRunnable, 0)
     }
 
-    fun setUpdateKaraokeHandler(){
+    fun setUpdateKaraokeHandler() {
         updateKaraokeHandler.postDelayed(updateKaraokeRunnable, 0)
     }
 
@@ -161,11 +164,11 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
             val handler = Handler()
             handler.postDelayed({
                 stopSinging()
-                //_singingEnd.value = true
             }, SingingFragment.UPDATE_INTERVAL_INFERENCE)
 
             // Re-run it after the update interval
-            updateLoopSingingHandler.postDelayed(updateLoopSingingRunnable,
+            updateLoopSingingHandler.postDelayed(
+                updateLoopSingingRunnable,
                 SingingFragment.UPDATE_INTERVAL_INFERENCE
             )
 
@@ -179,57 +182,59 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
 
             for (i in 1..24) {
 
-                val handler = Handler()
-                handler.postDelayed({
-                    _spannableForKaraoke.value =
-                        SpannableString(application.getString(R.string.song_lyrics_baby))
-                    _spannableForKaraoke.value?.setSpan(
-                        ForegroundColorSpan(Color.BLUE),
-                        0,
-                        5 * i,
-                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-                    )
-                    //binding.textviewKaraoke.text = wordToSpan
+                if (!_singingEnd.value!!) {
+                    val handler = Handler()
+                    handler.postDelayed({
+                        _spannableForKaraoke.value =
+                            SpannableString(application.getString(R.string.song_lyrics_baby))
+                        _spannableForKaraoke.value?.setSpan(
+                            ForegroundColorSpan(Color.BLUE),
+                            0,
+                            5 * i,
+                            Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                        )
 
-                    // Change words when first words stop
-                    if (i == 24) {
+                        Log.e("SPANNABLE", _spannableForKaraoke.value.toString())
 
-                        val handlerRest = Handler()
-                        handlerRest.postDelayed({
+                        // Change words when first words stop
+                        if (i == 24) {
 
-                            // set new text
-                            //binding.textviewKaraoke.text = getString(R.string.song_lyrics_mummy)
+                            val handlerRest = Handler()
+                            handlerRest.postDelayed({
 
-                            for (k in 1..25) {
 
-                                val handlerMummy = Handler()
-                                handlerMummy.postDelayed({
-                                    _spannableForKaraoke.value =
-                                        SpannableString(application.getString(R.string.song_lyrics_mummy))
-                                    _spannableForKaraoke.value?.setSpan(
-                                        ForegroundColorSpan(Color.BLUE),
-                                        0,
-                                        5 * k,
-                                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-                                    )
-                                    //binding.textviewKaraoke.text = wordToSpanMummy
+                                for (k in 1..25) {
 
-                                    // Stop everything after end of song
-                                    if (k == 25) {
-                                        stopAllSinging()
-                                        _singingEnd.value = true
+                                    if (!_singingEnd.value!!) {
+                                        val handlerMummy = Handler()
+                                        handlerMummy.postDelayed({
+                                            _spannableForKaraoke.value =
+                                                SpannableString(application.getString(R.string.song_lyrics_mummy))
+                                            _spannableForKaraoke.value?.setSpan(
+                                                ForegroundColorSpan(Color.BLUE),
+                                                0,
+                                                5 * k,
+                                                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                                            )
+
+                                            // Stop everything after end of song
+                                            if (k == 25) {
+                                                stopAllSinging()
+                                                _singingEnd.value = true
+                                            }
+
+                                        }, SingingFragment.UPDATE_INTERVAL_KARAOKE * k)
                                     }
 
-                                }, SingingFragment.UPDATE_INTERVAL_KARAOKE * k)
+                                }
 
-                            }
-
-                        }, 1400)
+                            }, 1400)
 
 
-                    }
+                        }
 
-                }, SingingFragment.UPDATE_INTERVAL_KARAOKE * i)
+                    }, SingingFragment.UPDATE_INTERVAL_KARAOKE * i)
+                }
 
             }
         }

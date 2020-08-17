@@ -183,6 +183,8 @@ class SingingFragment : Fragment() {
                 if (end) {
                     // Clear animation
                     binding.buttonAnimated.clearAnimation()
+                }else{
+                    animateSharkButton()
                 }
             }
         )
@@ -249,7 +251,7 @@ class SingingFragment : Fragment() {
         super.onPause()
 
         // Stop processes when app goes on background
-        singingStopped()
+        //singingStopped()
     }
 
     companion object {
