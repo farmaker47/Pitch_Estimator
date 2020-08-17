@@ -1,13 +1,18 @@
 package com.george.pitch_estimator.singingFragment
 
 import android.app.Application
+import android.graphics.Color
 import android.os.Handler
+import android.text.Spannable
+import android.text.SpannableString
+import android.text.style.ForegroundColorSpan
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.george.pitch_estimator.PitchModelExecutor
+import com.george.pitch_estimator.R
 import com.george.pitch_estimator.SingRecorder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -42,9 +47,18 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
     val inputTextFromAssets: LiveData<String>
         get() = _inputTextFromAssets
 
+    private val _spannableForKaraoke = MutableLiveData<SpannableString>()
+    // The external LiveData for the SelectedNews
+    val spannableForKaraoke: LiveData<SpannableString>
+        get() = _spannableForKaraoke
+
     private val _inferenceDone = MutableLiveData<Boolean>()
     val inferenceDone: LiveData<Boolean>
         get() = _inferenceDone
+
+    private val _singingEnd = MutableLiveData<Boolean>()
+    val singingEnd: LiveData<Boolean>
+        get() = _singingEnd
 
     init {
         // Start with loading musical pentagram from assets folder html code
@@ -85,7 +99,7 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
 
     fun stopAllSinging(){
         updateLoopSingingHandler.removeCallbacks(updateLoopSingingRunnable)
-        //updateKaraokeHandler.removeCallbacks(updateKaraokeRunnable)
+        updateKaraokeHandler.removeCallbacks(updateKaraokeRunnable)
     }
 
     private suspend fun doInference(
@@ -128,8 +142,12 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
         }
     }
 
-    fun setUpdateWidgetRunnable(){
+    fun setUpdateLoopSingingHandler(){
         updateLoopSingingHandler.postDelayed(updateLoopSingingRunnable, 0)
+    }
+
+    fun setUpdateKaraokeHandler(){
+        updateKaraokeHandler.postDelayed(updateKaraokeRunnable, 0)
     }
 
     private var updateLoopSingingRunnable: Runnable = Runnable {
@@ -137,11 +155,13 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
 
             // Start singing
             startSinging()
+            _singingEnd.value = false
 
             // Stop after 2048 millis
             val handler = Handler()
             handler.postDelayed({
                 stopSinging()
+                //_singingEnd.value = true
             }, SingingFragment.UPDATE_INTERVAL_INFERENCE)
 
             // Re-run it after the update interval
@@ -151,6 +171,68 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
 
         }
 
+    }
+
+    // Runnable to loop every 2 seconds with writing sound and inferring
+    private var updateKaraokeRunnable: Runnable = Runnable {
+        run {
+
+            for (i in 1..24) {
+
+                val handler = Handler()
+                handler.postDelayed({
+                    _spannableForKaraoke.value =
+                        SpannableString(application.getString(R.string.song_lyrics_baby))
+                    _spannableForKaraoke.value?.setSpan(
+                        ForegroundColorSpan(Color.BLUE),
+                        0,
+                        5 * i,
+                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                    )
+                    //binding.textviewKaraoke.text = wordToSpan
+
+                    // Change words when first words stop
+                    if (i == 24) {
+
+                        val handlerRest = Handler()
+                        handlerRest.postDelayed({
+
+                            // set new text
+                            //binding.textviewKaraoke.text = getString(R.string.song_lyrics_mummy)
+
+                            for (k in 1..25) {
+
+                                val handlerMummy = Handler()
+                                handlerMummy.postDelayed({
+                                    _spannableForKaraoke.value =
+                                        SpannableString(application.getString(R.string.song_lyrics_mummy))
+                                    _spannableForKaraoke.value?.setSpan(
+                                        ForegroundColorSpan(Color.BLUE),
+                                        0,
+                                        5 * k,
+                                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                                    )
+                                    //binding.textviewKaraoke.text = wordToSpanMummy
+
+                                    // Stop everything after end of song
+                                    if (k == 25) {
+                                        stopAllSinging()
+                                        _singingEnd.value = true
+                                    }
+
+                                }, SingingFragment.UPDATE_INTERVAL_KARAOKE * k)
+
+                            }
+
+                        }, 1400)
+
+
+                    }
+
+                }, SingingFragment.UPDATE_INTERVAL_KARAOKE * i)
+
+            }
+        }
     }
 
     /*private fun transcribe(audioFile: String) {

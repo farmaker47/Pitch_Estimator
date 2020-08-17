@@ -26,19 +26,17 @@ import android.os.Handler
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.style.ForegroundColorSpan
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.AnimationUtils
-import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Observer
 import com.george.pitch_estimator.PitchModelExecutor
 import com.george.pitch_estimator.R
 import com.george.pitch_estimator.SingRecorder
 import com.george.pitch_estimator.databinding.FragmentFirstBinding
-import org.koin.android.ext.android.bind
 import org.koin.android.ext.android.get
 import org.koin.android.ext.android.getKoin
 import org.koin.android.viewmodel.ext.android.viewModel
@@ -54,8 +52,6 @@ class SingingFragment : Fragment() {
     private val viewModel: SingingFragmentViewModel by viewModel()
     private lateinit var singRecorder: SingRecorder
     private lateinit var pitchModelExecutor: PitchModelExecutor
-    private lateinit var wordToSpan: Spannable
-    private lateinit var wordToSpanMummy: Spannable
 
     // Permissions
     var PERMISSION_ALL = 123
@@ -63,91 +59,6 @@ class SingingFragment : Fragment() {
         Manifest.permission.RECORD_AUDIO,
         Manifest.permission.WRITE_EXTERNAL_STORAGE
     )
-
-    // Handler to repeat update
-    //private val updateWidgetHandler = Handler()
-    private val updateKaraokeHandler = Handler()
-
-   /* // Runnable to loop every 2 seconds with writing sound and inferring
-    private var updateWidgetRunnable: Runnable = Runnable {
-        run {
-
-            // Start singing
-            viewModel.startSinging()
-
-            // Stop after 2048 millis
-            val handler = Handler()
-            handler.postDelayed({
-                viewModel.stopSinging()
-            }, UPDATE_INTERVAL_INFERENCE)
-
-            // Re-run it after the update interval
-            updateWidgetHandler.postDelayed(updateWidgetRunnable, UPDATE_INTERVAL_INFERENCE)
-
-        }
-
-    }*/
-
-    // Runnable to loop every 2 seconds with writing sound and inferring
-    private var updateKaraokeRunnable: Runnable = Runnable {
-        run {
-
-            for (i in 1..24) {
-
-                val handler = Handler()
-                handler.postDelayed({
-                    wordToSpan =
-                        SpannableString(getString(R.string.song_lyrics_baby))
-                    wordToSpan.setSpan(
-                        ForegroundColorSpan(Color.BLUE),
-                        0,
-                        5 * i,
-                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-                    )
-                    binding.textviewKaraoke.text = wordToSpan
-
-                    // Change words when first words stop
-                    if (i == 24) {
-
-                        val handlerRest = Handler()
-                        handlerRest.postDelayed({
-
-                            // set new text
-                            binding.textviewKaraoke.text = getString(R.string.song_lyrics_mummy)
-
-                            for (k in 1..25) {
-
-                                val handlerMummy = Handler()
-                                handlerMummy.postDelayed({
-                                    wordToSpanMummy =
-                                        SpannableString(getString(R.string.song_lyrics_mummy))
-                                    wordToSpanMummy.setSpan(
-                                        ForegroundColorSpan(Color.BLUE),
-                                        0,
-                                        5 * k,
-                                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-                                    )
-                                    binding.textviewKaraoke.text = wordToSpanMummy
-
-                                    // Stop everything after end of song
-                                    if (k == 25) {
-                                        singingStopped()
-                                    }
-
-                                }, UPDATE_INTERVAL_KARAOKE * k)
-
-                            }
-
-                        }, 1400)
-
-
-                    }
-
-                }, UPDATE_INTERVAL_KARAOKE * i)
-
-            }
-        }
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -170,11 +81,10 @@ class SingingFragment : Fragment() {
                 // Start animation
                 animateSharkButton()
                 // Start process immediately
-                //updateWidgetHandler.postDelayed(updateWidgetRunnable, 0)
-                viewModel.setUpdateWidgetRunnable()
+                viewModel.setUpdateLoopSingingHandler()
 
                 // Start karaoke
-                updateKaraokeHandler.postDelayed(updateKaraokeRunnable, 0)
+                viewModel.setUpdateKaraokeHandler()
 
                 //Toast.makeText(activity, "Singing has started", Toast.LENGTH_LONG).show()
 
@@ -259,6 +169,24 @@ class SingingFragment : Fragment() {
                 }
             })
 
+        // Observe viewmodel object
+        viewModel.spannableForKaraoke.observe(
+            requireActivity(),
+            Observer { karaokeString ->
+                binding.textviewKaraoke.text = karaokeString
+            }
+        )
+
+        viewModel.singingEnd.observe(
+            requireActivity(),
+            Observer { end ->
+                if (end) {
+                    // Clear animation
+                    binding.buttonAnimated.clearAnimation()
+                }
+            }
+        )
+
         return binding.root
     }
 
@@ -326,6 +254,7 @@ class SingingFragment : Fragment() {
 
     companion object {
         private const val TIME_DELAY_FOR_NOTES = 555L
+
         // Update interval for widget
         const val UPDATE_INTERVAL_INFERENCE = 2048L
         const val UPDATE_INTERVAL_KARAOKE = 400L
