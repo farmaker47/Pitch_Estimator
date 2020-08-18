@@ -173,8 +173,11 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
     fun stopAllSinging() {
         updateLoopSingingHandler.removeCallbacks(updateLoopSingingRunnable)
         updateKaraokeHandler.removeCallbacks(updateKaraokeRunnable)
+
+        // remove queue of callbacks when user presses stop before song stops
         handler.removeCallbacksAndMessages(null)
         handlerMummy.removeCallbacksAndMessages(null)
+
         _singingEnd.value = true
     }
 
@@ -224,7 +227,6 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
 
                             val handlerRest = Handler()
                             handlerRest.postDelayed({
-
 
                                 for (k in 1..25) {
 

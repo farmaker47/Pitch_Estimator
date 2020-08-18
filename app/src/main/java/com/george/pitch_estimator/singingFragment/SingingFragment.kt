@@ -67,6 +67,7 @@ class SingingFragment : Fragment() {
         getKoin().setProperty("koinUseGpu", false)
         singRecorder = get()
         pitchModelExecutor = get()
+        // Start interpreter
         viewModel.setSingRecorderModule(singRecorder, pitchModelExecutor)
 
         binding.buttonForSinging.setOnClickListener {
@@ -241,13 +242,6 @@ class SingingFragment : Fragment() {
         permissions: Array<String?>,
         grantResults: IntArray
     ) {
-    }
-
-    override fun onPause() {
-        super.onPause()
-
-        // Stop processes when app goes on background
-        //singingStopped()
     }
 
     override fun onResume() {

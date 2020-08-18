@@ -313,6 +313,6 @@ class PitchModelExecutor(
     }
 
     fun close() {
-        //interpreter.close()
+        interpreter.close()
     }
 }

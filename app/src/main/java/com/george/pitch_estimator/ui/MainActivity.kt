@@ -1,6 +1,7 @@
 package com.george.pitch_estimator.ui
 
 import android.os.Bundle
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
