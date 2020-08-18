@@ -1,6 +1,7 @@
 package com.george.pitch_estimator.singingFragment
 
 import android.app.Application
+import android.content.Context
 import android.graphics.Color
 import android.os.Handler
 import android.text.Spannable
@@ -24,11 +25,14 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
     lateinit var singRecorderObject: SingRecorder
     lateinit var pitchModelExecutorObject: PitchModelExecutor
     lateinit var inputStringPentagram: String
-    var _singingRunning = false
+    var singingRunning = false
+    private var context: Context = application
 
     // Handler to repeat update
     private val updateLoopSingingHandler = Handler()
     private val updateKaraokeHandler = Handler()
+    private val handler = Handler()
+    private val handlerMummy = Handler()
 
     private val _hertzValuesToDisplay = MutableLiveData<DoubleArray>()
     val hertzValuesToDisplay: LiveData<DoubleArray>
@@ -44,13 +48,11 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
 
     private val _inputTextFromAssets = MutableLiveData<String>()
 
-    // The external LiveData for the SelectedNews
     val inputTextFromAssets: LiveData<String>
         get() = _inputTextFromAssets
 
     private val _spannableForKaraoke = MutableLiveData<SpannableString>()
 
-    // The external LiveData for the SelectedNews
     val spannableForKaraoke: LiveData<SpannableString>
         get() = _spannableForKaraoke
 
@@ -69,11 +71,12 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
         // Initialize arraylist
         _noteValuesToDisplay.value = arrayListOf()
 
-        // Init textview words
-        _spannableForKaraoke.value = SpannableString(application.getString(R.string.song_lyrics_baby))
+        // Init textview karaoke words
+        _spannableForKaraoke.value =
+            SpannableString(application.getString(R.string.song_lyrics_baby))
     }
 
-    fun setNotesOnStart(){
+    fun setNotesOnStart() {
         _noteValuesToDisplay.value = arrayListOf()
     }
 
@@ -84,7 +87,7 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
 
     fun startSinging() {
 
-        _singingRunning = true
+        singingRunning = true
 
         singRecorderObject.startRecording()
         //singRecorderObject.startRecordingCommands()
@@ -99,17 +102,11 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
         Log.i("VIEWMODEL_SIZE", streamForInference.size.toString())
         Log.i("VIEWMODEL_VALUES", streamForInference.takeLast(100).toString())
 
-        _singingRunning = false
+        singingRunning = false
         viewModelScope.launch {
             doInference(stream, streamForInference)
         }
 
-    }
-
-    fun stopAllSinging() {
-        updateLoopSingingHandler.removeCallbacks(updateLoopSingingRunnable)
-        updateKaraokeHandler.removeCallbacks(updateKaraokeRunnable)
-        _singingEnd.value = true
     }
 
     private suspend fun doInference(
@@ -153,11 +150,32 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
     }
 
     fun setUpdateLoopSingingHandler() {
+        // Start loop for collecting sound and inferring
         updateLoopSingingHandler.postDelayed(updateLoopSingingRunnable, 0)
     }
 
     fun setUpdateKaraokeHandler() {
         updateKaraokeHandler.postDelayed(updateKaraokeRunnable, 0)
+
+        // Init textview karaoke words
+        _spannableForKaraoke.value =
+            SpannableString(context.getString(R.string.song_lyrics_baby))
+
+        // On start set white color to spannable words
+        _spannableForKaraoke.value?.setSpan(
+            ForegroundColorSpan(Color.WHITE),
+            0,
+            _spannableForKaraoke.value!!.length,
+            Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
+    }
+
+    fun stopAllSinging() {
+        updateLoopSingingHandler.removeCallbacks(updateLoopSingingRunnable)
+        updateKaraokeHandler.removeCallbacks(updateKaraokeRunnable)
+        handler.removeCallbacksAndMessages(null)
+        handlerMummy.removeCallbacksAndMessages(null)
+        _singingEnd.value = true
     }
 
     private var updateLoopSingingRunnable: Runnable = Runnable {
@@ -189,9 +207,9 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
 
             for (i in 1..24) {
 
-                if (!_singingEnd.value!!) {
-                    val handler = Handler()
-                    handler.postDelayed({
+                handler.postDelayed({
+                    // If statement if the user has stopped singing before end of song
+                    if (!_singingEnd.value!!) {
                         _spannableForKaraoke.value =
                             SpannableString(application.getString(R.string.song_lyrics_baby))
                         _spannableForKaraoke.value?.setSpan(
@@ -200,8 +218,6 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
                             5 * i,
                             Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
                         )
-
-                        Log.e("SPANNABLE", _spannableForKaraoke.value.toString())
 
                         // Change words when first words stop
                         if (i == 24) {
@@ -212,9 +228,9 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
 
                                 for (k in 1..25) {
 
-                                    if (!_singingEnd.value!!) {
-                                        val handlerMummy = Handler()
-                                        handlerMummy.postDelayed({
+                                    handlerMummy.postDelayed({
+                                        // If statement if the user has stopped singing before end of song
+                                        if (!_singingEnd.value!!) {
                                             _spannableForKaraoke.value =
                                                 SpannableString(application.getString(R.string.song_lyrics_mummy))
                                             _spannableForKaraoke.value?.setSpan(
@@ -229,9 +245,9 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
                                                 stopAllSinging()
                                                 _singingEnd.value = true
                                             }
+                                        }
 
-                                        }, SingingFragment.UPDATE_INTERVAL_KARAOKE * k)
-                                    }
+                                    }, SingingFragment.UPDATE_INTERVAL_KARAOKE * k)
 
                                 }
 
@@ -239,9 +255,9 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
 
 
                         }
+                    }
 
-                    }, SingingFragment.UPDATE_INTERVAL_KARAOKE * i)
-                }
+                }, SingingFragment.UPDATE_INTERVAL_KARAOKE * i)
 
             }
         }

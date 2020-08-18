@@ -19,13 +19,9 @@ limitations under the License.*/
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
-import android.graphics.Color
 import android.os.Bundle
 import android.os.Environment
 import android.os.Handler
-import android.text.Spannable
-import android.text.SpannableString
-import android.text.style.ForegroundColorSpan
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -75,7 +71,7 @@ class SingingFragment : Fragment() {
 
         binding.buttonForSinging.setOnClickListener {
 
-            if (viewModel._singingRunning) {
+            if (viewModel.singingRunning) {
                 singingStopped()
             } else {
                 // Start animation
@@ -194,8 +190,7 @@ class SingingFragment : Fragment() {
     }
 
     fun singingStopped() {
-        // Remove callback to stop collecting sound
-        //updateWidgetHandler.removeCallbacks(updateWidgetRunnable)
+        // Execute method to stop callbacks
         viewModel.stopAllSinging()
 
         // Clear animation
