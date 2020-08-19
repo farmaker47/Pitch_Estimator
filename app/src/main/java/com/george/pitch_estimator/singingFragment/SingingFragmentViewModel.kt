@@ -28,7 +28,7 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
     var singingRunning = false
     private var context: Context = application
 
-    // Handler to repeat update
+    // Handlers for repeating sound collection and karaoke effect
     private val updateLoopSingingHandler = Handler()
     private val updateKaraokeHandler = Handler()
     private val handler = Handler()
@@ -41,10 +41,6 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
     private val _noteValuesToDisplay = MutableLiveData<ArrayList<String>>()
     val noteValuesToDisplay: LiveData<ArrayList<String>>
         get() = _noteValuesToDisplay
-
-    private val _integerValuesToSet = MutableLiveData<Int>()
-    val integerValueToSet: LiveData<Int>
-        get() = _integerValuesToSet
 
     private val _inputTextFromAssets = MutableLiveData<String>()
 
@@ -66,7 +62,7 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
 
     init {
         // Start with loading musical pentagram from assets folder html code
-        readTextFromAssets(application)
+        readHtmlFromAssets(application)
 
         // Initialize arraylist
         _noteValuesToDisplay.value = arrayListOf()
@@ -80,6 +76,7 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
         _noteValuesToDisplay.value = arrayListOf()
     }
 
+    // This should be replaced with DI
     fun setSingRecorderModule(singRecorder: SingRecorder, pitchModelExecutor: PitchModelExecutor) {
         singRecorderObject = singRecorder
         pitchModelExecutorObject = pitchModelExecutor
@@ -103,6 +100,7 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
         Log.i("VIEWMODEL_VALUES", streamForInference.takeLast(100).toString())
 
         singingRunning = false
+        // Background thread to do inference with the generated short arraylist
         viewModelScope.launch {
             doInference(stream, streamForInference)
         }
@@ -133,11 +131,10 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
         Log.i("HERTZ", hertzValuesToDisplay.toString())
         _inferenceDone.postValue(true)
 
-        // Load dummy sound file for practice and calibration/ comparison with Colab notebook
         //transcribe("/sdcard/Pitch Estimator/soloupis.wav")
     }
 
-    private fun readTextFromAssets(application: Application) {
+    private fun readHtmlFromAssets(application: Application) {
         try {
             val inputStreamPentagram: InputStream = application.assets.open("final1.txt")
             inputStringPentagram = inputStreamPentagram.bufferedReader().use { it.readText() }
@@ -155,6 +152,7 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
     }
 
     fun setUpdateKaraokeHandler() {
+        // Start loop for visualizing karaoke effect
         updateKaraokeHandler.postDelayed(updateKaraokeRunnable, 0)
 
         // Init textview karaoke words
@@ -171,10 +169,9 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
     }
 
     fun stopAllSinging() {
+        // remove queue of callbacks when user presses stop before song stops
         updateLoopSingingHandler.removeCallbacks(updateLoopSingingRunnable)
         updateKaraokeHandler.removeCallbacks(updateKaraokeRunnable)
-
-        // remove queue of callbacks when user presses stop before song stops
         handler.removeCallbacksAndMessages(null)
         handlerMummy.removeCallbacksAndMessages(null)
 
@@ -343,6 +340,7 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
         // Below stopAllSinging to execute when back button is used
         stopAllSinging()
 
+        // Close interpreter here
         pitchModelExecutorObject.close()
     }
 }

@@ -13,6 +13,9 @@ import java.io.*
 import java.nio.MappedByteBuffer
 import java.nio.channels.FileChannel
 
+// Class to collect sound in the form of short arraylist
+// to make it ready for inference
+
 class SingRecorder(
     private val mHotwordKey: String,
     numberRecordings: Int,

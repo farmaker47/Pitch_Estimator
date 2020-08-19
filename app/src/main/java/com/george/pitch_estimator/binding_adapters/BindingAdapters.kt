@@ -21,6 +21,7 @@ fun bindDoubleArrayHertzToValues(textView: TextView, value: DoubleArray?) {
 
 }
 
+// Binding adapter to display notes output on screen
 @BindingAdapter("noteArrayListToString")
 fun bindDoubleArrayHertzToValues(textView: TextView, value: ArrayList<String>?) {
 
@@ -28,6 +29,7 @@ fun bindDoubleArrayHertzToValues(textView: TextView, value: ArrayList<String>?) 
 
 }
 
+// this binding adapter helps load custom html from assets folder
 @BindingAdapter("htmlToScreen")
 fun bindTextViewHtml(webView: WebView, htmlValue: String) {
 

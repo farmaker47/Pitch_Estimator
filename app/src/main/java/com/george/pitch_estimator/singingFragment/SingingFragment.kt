@@ -45,6 +45,7 @@ import java.io.File
 class SingingFragment : Fragment() {
 
     private lateinit var binding: FragmentFirstBinding
+    // Koin ViewModel DI
     private val viewModel: SingingFragmentViewModel by viewModel()
     private lateinit var singRecorder: SingRecorder
     private lateinit var pitchModelExecutor: PitchModelExecutor
@@ -66,8 +67,8 @@ class SingingFragment : Fragment() {
         binding.viewModelxml = viewModel
         getKoin().setProperty("koinUseGpu", false)
         singRecorder = get()
+        // Here interpreter starts immediately
         pitchModelExecutor = get()
-        // Start interpreter
         viewModel.setSingRecorderModule(singRecorder, pitchModelExecutor)
 
         binding.buttonForSinging.setOnClickListener {
@@ -77,7 +78,7 @@ class SingingFragment : Fragment() {
             } else {
                 // Start animation
                 animateSharkButton()
-                // Start process immediately
+                // Start collecting sound and inferring immediately
                 viewModel.setUpdateLoopSingingHandler()
 
                 // Start karaoke
@@ -182,6 +183,7 @@ class SingingFragment : Fragment() {
                     // Clear animation
                     binding.buttonAnimated.clearAnimation()
                 }else{
+                    // Start animation
                     animateSharkButton()
                 }
             }
