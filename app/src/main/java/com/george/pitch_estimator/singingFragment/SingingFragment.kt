@@ -45,6 +45,7 @@ import java.io.File
 class SingingFragment : Fragment() {
 
     private lateinit var binding: FragmentFirstBinding
+
     // Koin ViewModel DI
     private val viewModel: SingingFragmentViewModel by viewModel()
     private lateinit var singRecorder: SingRecorder
@@ -182,7 +183,7 @@ class SingingFragment : Fragment() {
                 if (end) {
                     // Clear animation
                     binding.buttonAnimated.clearAnimation()
-                }else{
+                } else {
                     // Start animation
                     animateSharkButton()
                 }

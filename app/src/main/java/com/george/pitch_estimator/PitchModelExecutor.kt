@@ -171,7 +171,7 @@ class PitchModelExecutor(
         predictTime = System.currentTimeMillis() - predictTime
         Log.i("PITCHES_TIME", predictTime.toString())
 
-        return noRestInBeginningAndEnd//hertzValues DoubleArray
+        return noRestInBeginningAndEnd // ArrayList<String>
     }
 
     private fun convertToAbsolutePitchValuesInHz(value: Float): Double {
