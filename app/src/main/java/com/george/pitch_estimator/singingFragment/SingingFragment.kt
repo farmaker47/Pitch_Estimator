@@ -22,10 +22,12 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Environment
 import android.os.Handler
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.AnimationUtils
+import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
@@ -42,7 +44,8 @@ import java.io.File
 /**
  * A simple [Fragment] subclass as the default destination in the navigation.
  */
-class SingingFragment : Fragment() {
+class SingingFragment : Fragment(),
+    ActivityCompat.OnRequestPermissionsResultCallback {
 
     private lateinit var binding: FragmentFirstBinding
 
@@ -236,7 +239,7 @@ class SingingFragment : Fragment() {
 
     private fun initialize() {
         if (!hasPermissions(activity, *PERMISSIONS)) {
-            ActivityCompat.requestPermissions(requireActivity(), PERMISSIONS, PERMISSION_ALL)
+            requestPermissions(PERMISSIONS, PERMISSION_ALL)
         }
     }
 
@@ -245,6 +248,35 @@ class SingingFragment : Fragment() {
         permissions: Array<String?>,
         grantResults: IntArray
     ) {
+
+        if (requestCode == PERMISSION_ALL) {
+            if (allPermissionsGranted(grantResults)) {
+
+                Toast.makeText(
+                    activity,
+                    getString(R.string.allPermissionsGranted),
+                    Toast.LENGTH_LONG
+                ).show()
+
+
+            } else {
+
+                Toast.makeText(
+                    activity,
+                    getString(R.string.permissionsNotGranted),
+                    Toast.LENGTH_LONG
+                ).show()
+
+                activity?.finish()
+
+            }
+        } else {
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        }
+    }
+
+    private fun allPermissionsGranted(grantResults: IntArray) = grantResults.all {
+        it == PackageManager.PERMISSION_GRANTED
     }
 
     override fun onResume() {

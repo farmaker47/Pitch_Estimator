@@ -10,5 +10,7 @@
     <string name="hello_second_fragment">Hello second fragment. Arg: %1$s</string>
     <string name="song_lyrics_baby">\'Baby shark doo doo doo doo doo doo, baby shark doo doo doo doo doo doo, baby shark doo doo doo doo doo doo, baby shark\'</string>
     <string name="song_lyrics_mummy">\'Mummy shark doo doo doo doo doo doo, mummy shark doo doo doo doo doo doo, mummy shark doo doo doo doo doo doo, mummy shark.\'</string>
+    <string name="allPermissionsGranted">All permissions are granted!</string>
+    <string name="permissionsNotGranted">All permissions are mandatory for app to work properly!</string>
 
 </resources>

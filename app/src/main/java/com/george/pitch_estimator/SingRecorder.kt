@@ -515,9 +515,9 @@ class SingRecorder(
                 e.printStackTrace()
             }
             try {
-                stream!!.write(wav)
-            } catch (e: IOException) {
-                e.printStackTrace()
+                stream?.write(wav)
+            } catch (e: Exception) {
+                Log.e("PERMIS_STORAGE_DENIED","NOT ABLE TO WRITE .WAV TO SDCARD")
             }
         } finally {
             if (stream != null) {
