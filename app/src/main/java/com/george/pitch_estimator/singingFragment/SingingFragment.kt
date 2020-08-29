@@ -56,6 +56,8 @@ class SingingFragment : Fragment(),
 
     // Permissions
     var PERMISSION_ALL = 123
+    // App saves .wav audio file inside external storage of phone so anyone can compare
+    // results with the colab notebook output. For that purpose this permission is mandatory
     var PERMISSIONS = arrayOf(
         Manifest.permission.RECORD_AUDIO,
         Manifest.permission.WRITE_EXTERNAL_STORAGE
