@@ -18,12 +18,18 @@ import com.george.pitch_estimator.SingRecorder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.koin.android.ext.android.get
+import org.koin.android.ext.android.getKoin
+import org.koin.core.KoinComponent
+import org.koin.core.get
 import java.io.*
 
-class SingingFragmentViewModel(application: Application) : AndroidViewModel(application) {
+class SingingFragmentViewModel(application: Application) : AndroidViewModel(application),
+    KoinComponent {
 
-    lateinit var singRecorderObject: SingRecorder
-    lateinit var pitchModelExecutorObject: PitchModelExecutor
+    private var singRecorderObject: SingRecorder
+    private var pitchModelExecutorObject: PitchModelExecutor
+
     lateinit var inputStringPentagram: String
     var singingRunning = false
     private var context: Context = application
@@ -61,6 +67,13 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
         get() = _singingEnd
 
     init {
+
+        // Koin DI
+        getKoin().setProperty("koinUseGpu", false)
+        singRecorderObject = get()
+        // Here interpreter starts immediately
+        pitchModelExecutorObject = get()
+
         // Start with loading musical pentagram from assets folder html code
         readHtmlFromAssets(application)
 
@@ -78,8 +91,8 @@ class SingingFragmentViewModel(application: Application) : AndroidViewModel(appl
 
     // This should be replaced with DI
     fun setSingRecorderModule(singRecorder: SingRecorder, pitchModelExecutor: PitchModelExecutor) {
-        singRecorderObject = singRecorder
-        pitchModelExecutorObject = pitchModelExecutor
+        //singRecorderObject = singRecorder
+        //pitchModelExecutorObject = pitchModelExecutor
     }
 
     fun startSinging() {

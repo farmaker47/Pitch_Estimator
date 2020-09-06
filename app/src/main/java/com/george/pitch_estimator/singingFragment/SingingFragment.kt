@@ -71,11 +71,6 @@ class SingingFragment : Fragment(),
         binding.lifecycleOwner = this
 
         binding.viewModelxml = viewModel
-        getKoin().setProperty("koinUseGpu", false)
-        singRecorder = get()
-        // Here interpreter starts immediately
-        pitchModelExecutor = get()
-        viewModel.setSingRecorderModule(singRecorder, pitchModelExecutor)
 
         binding.buttonForSinging.setOnClickListener {
 
